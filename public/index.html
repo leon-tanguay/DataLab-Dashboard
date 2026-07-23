@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DataLab</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="bg-drift" aria-hidden="true"></div>
+
+    <div id="app" class="app">
+      <!-- ============ Top bar (compact) ============ -->
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-logo" src="assets/datalab-logo.png" alt="DataLab" />
+          <div class="brand-text">
+            <span class="brand-mark">Data<span class="brand-accent">Lab</span></span>
+            <span class="brand-sub">UC&nbsp;Davis</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="hours-block" id="hours-block" data-status="unknown">
+            <div id="hours-text" class="hours-text">Shields Library</div>
+          </div>
+          <div class="clock">
+            <div id="clock-time" class="clock-time">--:--</div>
+            <div id="clock-date" class="clock-date">&nbsp;</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Closing-soon banner -->
+      <div id="closing-banner" class="closing-banner" hidden>
+        <span class="closing-icon">⏰</span>
+        <span id="closing-banner-text">Shields Library closes soon</span>
+      </div>
+
+      <!-- ============ Tier 1: Featured project ============ -->
+      <section class="featured-wrap" aria-label="Featured project">
+        <div class="tier-head">
+          <span class="tier-label">Featured Project</span>
+        </div>
+        <article id="featured" class="featured"></article>
+      </section>
+
+      <!-- ============ Tier 2: Active Projects board (paged) ============ -->
+      <section class="board-wrap" aria-label="Active projects">
+        <div class="tier-head">
+          <span class="tier-label">Active Projects</span>
+          <span id="board-count" class="tier-sub"></span>
+          <span id="board-pages" class="board-pages"></span>
+        </div>
+        <div class="board-grid board-header">
+          <span>Project</span><span>Lead</span><span>Partner</span><span>Focus</span><span>Since</span>
+        </div>
+        <div id="board" class="board"></div>
+      </section>
+
+      <!-- ============ Tier 3: Workshops / Past work (compact) ============ -->
+      <section class="rail-wrap" aria-label="Workshops and past work">
+        <div class="rail-inner">
+          <span id="rail-label" class="rail-label">Selected Past Work</span>
+          <ul id="workshop-list" class="workshop-list" hidden></ul>
+          <div id="pastwork" class="pastwork" hidden>
+            <div class="ticker-viewport"><div id="ticker-track" class="ticker-track"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="conn" class="conn" hidden><span class="conn-dot"></span> reconnecting</div>
+    </div>
+
+    <!-- Full-screen CLOSED takeover -->
+    <div id="closed-overlay" class="closed-overlay" hidden>
+      <div class="closed-inner">
+        <div class="closed-lib-name">Shields Library</div>
+        <div class="closed-big">CLOSED</div>
+        <div id="closed-sub" class="closed-sub"></div>
+        <div id="closed-clock" class="closed-clock"></div>
+      </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

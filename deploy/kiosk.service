@@ -1,0 +1,21 @@
+# systemd unit that launches the Chromium kiosk once a graphical session exists.
+# Requires a logged-in X session on the display machine (e.g. auto-login to a
+# lightweight desktop/X). Install: copy to /etc/systemd/system/, adjust User and
+# the XAUTHORITY path, then:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now kiosk
+[Unit]
+Description=DataLab Dashboard Kiosk (Chromium)
+After=graphical.target dashboard.service
+Wants=dashboard.service
+
+[Service]
+Type=simple
+User=datalab
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/datalab/.Xauthority
+ExecStart=/opt/datalab-dashboard/deploy/kiosk.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

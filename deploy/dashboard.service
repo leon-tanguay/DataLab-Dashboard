@@ -1,0 +1,22 @@
+# systemd unit for the DataLab dashboard backend (Node + static UI).
+# Install: copy to /etc/systemd/system/, adjust User/WorkingDirectory/ExecStart,
+# then:  sudo systemctl daemon-reload && sudo systemctl enable --now dashboard
+[Unit]
+Description=DataLab TV Dashboard (backend + static UI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=datalab
+WorkingDirectory=/opt/datalab-dashboard
+# Node >= 20.6 supports --env-file-if-exists. On older Node, drop that flag and
+# use the EnvironmentFile line below instead.
+ExecStart=/usr/bin/node --env-file-if-exists=.env server/index.js
+# EnvironmentFile=-/opt/datalab-dashboard/.env
+Environment=NODE_ENV=production
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

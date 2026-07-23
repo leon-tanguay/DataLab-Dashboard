@@ -1,0 +1,22 @@
+{
+  "name": "datalab-dashboard",
+  "version": "1.0.0",
+  "description": "Always-on TV dashboard for the UC Davis DataLab: active projects, upcoming workshops, and Shields Library closing alerts.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "fetch:projects": "node --env-file-if-exists=.env server/sources/projects.js",
+    "fetch:workshops": "node --env-file-if-exists=.env server/sources/workshops.js",
+    "fetch:hours": "node --env-file-if-exists=.env server/sources/hours.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "luxon": "^3.5.0",
+    "papaparse": "^5.4.1"
+  }
+}
