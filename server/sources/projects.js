@@ -90,6 +90,7 @@ function mapRow(row) {
     link: cleanLink(field(row, 'Public Product Link', 'DataLab webpage url')),
     image: imageUrl(field(row, 'Image')),
     startYear,
+    endYear: yearOf(field(row, 'Actual Completion (or pause date)', 'Anticipated End Date')),
     funded: /extern|grant|funded/i.test(field(row, 'Source', 'Category')),
     status: field(row, 'Status').toLowerCase(),
   };
@@ -110,7 +111,13 @@ export async function fetchProjects() {
 
   const completed = rows
     .filter((p) => config.projects.completedStatuses.includes(p.status) && (p.name || p.title))
-    .map((p) => ({ name: p.name || p.title, lead: p.lead, domain: p.domain, startYear: p.startYear }));
+    .map((p) => ({
+      name: p.name || p.title,
+      lead: p.lead,
+      facultyPartner: p.facultyPartner,
+      domain: p.domain,
+      year: p.endYear || p.startYear || null, // completion year preferred
+    }));
 
   // Scale/breadth stats across all real (active + completed) work — the headline
   // numbers that show a walk-in donor how much and how widely the lab operates.

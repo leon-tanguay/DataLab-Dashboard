@@ -113,40 +113,38 @@ async function poll() {
 }
 function setConn(ok) { $('#conn').hidden = ok || state.failures < 2; }
 
-/* ---------------- Cycling accomplishments (header) ---------------- */
-let statTimer = null;
-let statIndex = 0;
+/* ---------------- Header stat strip (slow scroll, ~2 at a time) ---------------- */
 function statItems() {
   const s = state.stats;
   if (!s) return [];
   const items = [
     [s.active, 'Active Projects'],
-    [s.delivered, 'Projects Delivered'],
-    [s.partners, 'Faculty & Partners'],
-    [s.departments, 'Departments & Units'],
-    [s.domains, 'Fields of Study'],
+    [s.delivered, 'Projects Completed'],
+    [s.partners, 'Faculty Partners'],
+    [s.departments, 'Departments'],
+    [s.domains, 'Research Areas'],
   ].filter(([n]) => n != null && n !== 0);
-  if (s.sinceYear) items.push([new Date().getFullYear() - s.sinceYear, 'Years of Impact']);
+  if (s.sinceYear) items.push([new Date().getFullYear() - s.sinceYear, 'Years Active']);
   return items;
 }
-function showStat(i) {
-  const items = statItems();
-  if (!items.length) { $('#statcycle').innerHTML = ''; return; }
-  const [n, label] = items[i % items.length];
-  $('#statcycle').innerHTML =
-    `<div class="sc-item in"><span class="sc-num">${n}</span><span class="sc-label">${esc(label)}</span></div>`;
-}
+let lastStatSig = '';
 function renderStats() {
   const items = statItems();
-  clearInterval(statTimer);
-  if (!items.length) { $('#statcycle').innerHTML = ''; return; }
-  statIndex %= items.length;
-  showStat(statIndex);
-  statTimer = setInterval(() => {
-    const n = statItems().length || 1;
-    statIndex = (statIndex + 1) % n;
-    showStat(statIndex);
-  }, 3600);
+  const el = $('#statcycle');
+  if (!items.length) { el.innerHTML = ''; lastStatSig = ''; return; }
+  // Only rebuild when the numbers actually change, so the slow scroll isn't reset every poll.
+  const sig = items.map((i) => i.join(':')).join('|');
+  if (sig === lastStatSig) return;
+  lastStatSig = sig;
+  const one = items
+    .map(([n, l]) => `<span class="sc-item"><span class="sc-num">${n}</span><span class="sc-label">${esc(l)}</span></span>`)
+    .join('');
+  el.innerHTML = `<div class="sc-track">${one}${one}</div>`; // duplicate for seamless loop
+  requestAnimationFrame(() => {
+    const track = el.querySelector('.sc-track');
+    const half = track.scrollWidth / 2;
+    track.style.setProperty('--sc-duration', `${Math.max(45, Math.round(half / 22))}s`); // slow, perceptible drift
+  });
 }
 
 /* ---------------- Tier 1: Active Projects board (paged) ---------------- */
@@ -276,23 +274,29 @@ function renderPastwork() {
   const track = $('#ticker-track');
   const items = (state.completed || []).filter((c) => c.name);
   if (!items.length) { track.innerHTML = ''; return; }
-  const one = items
-    .map(
-      (c) =>
-        `<span class="ticker-item"><b>${esc(c.name)}</b>${c.startYear ? `<span class="ty">${c.startYear}</span>` : ''}<span class="ti-sep"></span></span>`
-    )
+  // Newest first, grouped by year with a serif year marker between groups.
+  const sorted = [...items].sort((a, b) => (b.year || 0) - (a.year || 0) || a.name.localeCompare(b.name));
+  let cur = null;
+  const one = sorted
+    .map((c) => {
+      let head = '';
+      if (c.year && c.year !== cur) { cur = c.year; head = `<span class="pp-year">${c.year}</span>`; }
+      const sub = [c.lead, realName(c.facultyPartner)].filter(Boolean).join(' · ') || c.domain || '';
+      return `${head}<span class="pp-card"><span class="pp-swatch" style="--sw:${domainColor(c.domain)}"></span>` +
+        `<span class="pp-body"><b>${esc(c.name)}</b><small>${esc(sub)}</small></span></span>`;
+    })
     .join('');
-  track.innerHTML = one + one;
+  track.innerHTML = one + one; // duplicate for seamless loop
   requestAnimationFrame(() => {
     const half = track.scrollWidth / 2;
-    track.style.setProperty('--ticker-duration', `${Math.max(40, Math.round(half / 80))}s`);
+    track.style.setProperty('--ticker-duration', `${Math.max(90, Math.round(half / 45))}s`);
   });
 }
 function showRail(mode) {
   state.railMode = mode;
   const hasWs = (state.workshops || []).length > 0;
   const useWs = mode === 'workshops' && hasWs;
-  $('#rail-label').textContent = useWs ? 'Upcoming Workshops' : 'Selected Past Work';
+  $('#rail-label').textContent = useWs ? 'Upcoming Workshops' : 'Past Projects';
   $('#workshop-list').hidden = !useWs;
   $('#pastwork').hidden = useWs;
   if (useWs) renderWorkshops();

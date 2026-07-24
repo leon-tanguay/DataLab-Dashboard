@@ -34,23 +34,24 @@ function bell(freq, when, dur, gain) {
   });
 }
 
-// Gentle two-note chime for the first (15-min) warning.
+// Gentle two-note DESCENDING chime for the first (15-min) warning — a falling
+// contour reads as "winding down / ending", not a summons.
 function chimeGentle() {
   const ac = ctx();
   if (!ac) return;
   const t = ac.currentTime;
-  bell(880, t, 1.4, 0.25); // A5
-  bell(1174.7, t + 0.28, 1.6, 0.22); // D6
+  bell(783.99, t, 1.4, 0.25); // G5
+  bell(587.33, t + 0.32, 1.7, 0.24); // D5 (down)
 }
 
-// More insistent triple chime for the final (5-min) warning.
+// More insistent three-note DESCENDING chime for the final (5-min) warning.
 function chimeUrgent() {
   const ac = ctx();
   if (!ac) return;
   const t = ac.currentTime;
-  bell(987.8, t, 0.9, 0.3);
-  bell(987.8, t + 0.35, 0.9, 0.3);
-  bell(1318.5, t + 0.7, 1.4, 0.32);
+  bell(880.0, t, 0.85, 0.3); // A5
+  bell(698.46, t + 0.34, 0.85, 0.3); // F5
+  bell(523.25, t + 0.68, 1.5, 0.32); // C5 (down)
 }
 
 // Play a chime on demand (test menu).
@@ -92,7 +93,7 @@ export function evaluate(hours, warnMinutes, todayKey) {
     else chimeGentle();
   }
 
-  const label =
-    mins <= 1 ? 'is closing now' : `closes in ${mins} minute${mins === 1 ? '' : 's'}`;
-  return { banner: `Shields Library ${label} — please wrap up` };
+  const banner =
+    mins <= 1 ? 'Shields Library closing' : `Shields Library closes in ${mins} minutes`;
+  return { banner };
 }
