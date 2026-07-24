@@ -84,8 +84,8 @@ body.show-cursor { cursor: default; }
   height: 100vh; width: 100vw;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  /* header · featured · active board · past-work rail */
-  grid-template-rows: auto minmax(0, 0.98fr) minmax(0, 1.85fr) minmax(0, 0.3fr);
+  /* header · featured · active board · past-projects rail */
+  grid-template-rows: auto minmax(0, 0.95fr) minmax(0, 1.7fr) minmax(0, 0.46fr);
   padding: var(--pad);
   gap: var(--gap);
   overflow: hidden;
@@ -216,32 +216,42 @@ body.show-cursor { cursor: default; }
 .br-since { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700;
   font-size: clamp(12px, 1vw, 18px); color: var(--gold-soft); }
 
-/* ---------------- Workshops / Past work (compact) ---------------- */
-.rail-wrap { display: flex; min-height: 0; }
-.rail-inner { flex: 1; min-width: 0; display: flex; align-items: center; gap: clamp(14px, 1.5vw, 26px);
+/* ---------------- Workshops / Past projects ---------------- */
+.rail-wrap { display: flex; flex-direction: column; min-height: 0; }
+.rail-inner { flex: 1; min-width: 0; display: flex; align-items: center;
   background: var(--panel-strong); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 0 clamp(15px, 1.6vw, 26px); }
-.rail-label { flex: none; text-transform: uppercase; letter-spacing: 0.18em; font-size: clamp(9px, 0.82vw, 14px);
-  font-weight: 700; color: var(--gold); white-space: nowrap; padding-left: 15px; position: relative; }
-.rail-label::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 7px; height: 7px; border-radius: 2px; background: var(--gold); }
+  padding: 0 clamp(16px, 1.7vw, 30px); overflow: hidden; }
 .pastwork { flex: 1; min-width: 0; display: flex; align-items: center; overflow: hidden; }
-/* One past project at a time — broadcast lower-third that wipes open, holds, closes. */
+/* One past project at a time — broadcast lower-third that wipes open, holds, closes.
+   Name sits left; credits are pushed right to use the full width of the band. */
 .pp-feature { position: relative; flex: 1; min-width: 0; display: flex; align-items: center;
-  gap: clamp(16px, 1.7vw, 30px); padding-left: clamp(14px, 1.4vw, 22px); }
-.pp-feature::before { content: ""; position: absolute; left: 0; top: 14%; bottom: 14%; width: 4px;
+  gap: clamp(18px, 2vw, 40px); padding-left: clamp(16px, 1.5vw, 24px); }
+.pp-feature::before { content: ""; position: absolute; left: 0; top: 12%; bottom: 12%; width: 4px;
   border-radius: 2px; background: var(--accent, var(--gold)); }
-.pp-feature.open { animation: pp-open 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.pp-feature.close { animation: pp-close 0.42s ease both; }
+.pp-feature.open { animation: pp-open 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.pp-feature.close { animation: pp-close 0.4s ease both; }
 .ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--gold);
-  font-size: clamp(22px, 2.1vw, 38px); font-variant-numeric: tabular-nums; }
-.ppf-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.ppf-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(16px, 1.55vw, 28px);
+  font-size: clamp(24px, 2.3vw, 42px); font-variant-numeric: tabular-nums; }
+.ppf-body { min-width: 0; flex: 0 1 auto; }
+.ppf-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(17px, 1.7vw, 31px);
   color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ppf-meta { font-size: clamp(12px, 1.05vw, 18px); color: var(--ink-dim); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; }
+.ppf-credits { flex: none; margin-left: auto; display: flex; align-items: center;
+  gap: clamp(18px, 2vw, 40px); }
+.ppf-seg { font-size: clamp(14px, 1.2vw, 21px); color: var(--ink); font-weight: 600; white-space: nowrap; }
+.ppf-seg i { font-style: normal; display: block; text-transform: uppercase; letter-spacing: 0.14em;
+  font-size: 0.56em; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; }
+.ppf-chip { padding: 7px 16px; border-radius: 8px; font-size: clamp(12px, 1.05vw, 18px); font-weight: 700;
+  white-space: nowrap; color: var(--accent, var(--gold));
+  background: color-mix(in srgb, var(--accent, var(--gold)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--gold)) 45%, transparent); }
+/* Reel: fast-scroll of project names that decelerates onto the next story. */
+.pp-reel { display: inline-flex; align-items: center; white-space: nowrap; will-change: transform; }
+.pp-chip { display: inline-flex; align-items: center; gap: 10px; padding: 0 clamp(20px, 2vw, 38px);
+  font-family: var(--font-serif); font-weight: 600; font-size: clamp(16px, 1.5vw, 27px); color: var(--ink-dim);
+  border-left: 1px solid var(--line-soft); }
+.pp-chip-sw { width: 8px; height: 8px; border-radius: 2px; background: var(--sw, var(--teal)); flex: none; }
 @keyframes pp-open {
-  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(26px); }
+  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(22px) scale(0.98); }
   to   { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
 }
 @keyframes pp-close {

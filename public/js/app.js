@@ -288,16 +288,52 @@ function pastCardHTML(p) {
   return `<span class="ppf-year">${p.year || ''}</span>
     <div class="ppf-body"><b class="ppf-name">${esc(p.name)}</b><span class="ppf-meta">${esc(meta)}</span></div>`;
 }
+const titleCase = (s) => (s || '').replace(/\b\w/g, (c) => c.toUpperCase());
 function showPast(i) {
   const list = pastList();
   const el = $('#pp-feature');
   if (!list.length) { el.innerHTML = ''; return; }
   const p = list[((i % list.length) + list.length) % list.length];
+  const partner = realName(p.facultyPartner);
+  const credits = [];
+  if (p.lead) credits.push(`<span class="ppf-seg"><i>Lead</i>${esc(p.lead)}</span>`);
+  if (partner) credits.push(`<span class="ppf-seg"><i>Partner</i>${esc(partner)}</span>`);
+  const chip = p.domain ? `<span class="ppf-chip">${esc(titleCase(p.domain))}</span>` : '';
   el.style.setProperty('--accent', domainColor(p.domain));
-  el.innerHTML = pastCardHTML(p);
+  // Name on the left; credits pushed to the right to fill the wide band.
+  el.innerHTML =
+    `<span class="ppf-year">${p.year || ''}</span>` +
+    `<div class="ppf-body"><b class="ppf-name">${esc(p.name)}</b></div>` +
+    `<div class="ppf-credits">${credits.join('')}${chip}</div>`;
   el.classList.remove('close');
   void el.offsetWidth; // restart animation
-  el.classList.add('open');
+  el.classList.add('open'); // pop into the story
+}
+// Fast-scroll a reel of project names (decelerating) onto the target, then pop it open.
+function reelToPast(targetIndex) {
+  const list = pastList();
+  if (!list.length) return;
+  const el = $('#pp-feature');
+  el.classList.remove('open', 'close');
+  const start = ((targetIndex - 8) % list.length + list.length) % list.length;
+  let items = '';
+  for (let k = 0; k <= 8; k++) {
+    const p = list[(start + k) % list.length];
+    items += `<span class="pp-chip"><span class="pp-chip-sw" style="--sw:${domainColor(p.domain)}"></span>${esc(p.name)}</span>`;
+  }
+  el.innerHTML = `<div class="pp-reel">${items}</div>`;
+  const reel = el.firstElementChild;
+  const last = reel.lastElementChild;
+  requestAnimationFrame(() => {
+    const endX = -last.offsetLeft; // bring the target chip to the left focus
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateX(30px)';
+    void reel.offsetWidth;
+    reel.style.transition = 'transform 1.05s cubic-bezier(0.15, 0.75, 0.12, 1)';
+    reel.style.transform = `translateX(${endX}px)`;
+  });
+  clearTimeout(pastCloseTimer);
+  pastCloseTimer = setTimeout(() => showPast(targetIndex), 1080);
 }
 function startPastCycle() {
   clearInterval(pastTimer);
@@ -305,16 +341,16 @@ function startPastCycle() {
   const list = pastList();
   if (!list.length) { $('#pp-feature').innerHTML = ''; return; }
   state.pastIndex = (((state.pastIndex || 0) % list.length) + list.length) % list.length;
-  showPast(state.pastIndex);
+  showPast(state.pastIndex); // first one pops in directly
   pastTimer = setInterval(() => {
     const el = $('#pp-feature');
     el.classList.remove('open');
     el.classList.add('close'); // slide the current story away
     pastCloseTimer = setTimeout(() => {
       state.pastIndex = (state.pastIndex + 1) % pastList().length;
-      showPast(state.pastIndex);
-    }, 450);
-  }, 5500);
+      reelToPast(state.pastIndex); // flip through projects, then pop the next
+    }, 400);
+  }, 6800);
 }
 function stopPastCycle() {
   clearInterval(pastTimer);
