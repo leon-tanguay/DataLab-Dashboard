@@ -8,20 +8,22 @@
   </head>
   <body>
     <div class="bg-drift" aria-hidden="true"></div>
+    <div class="bg-grid" aria-hidden="true"></div>
 
     <div id="app" class="app">
-      <!-- ============ Top bar (compact) ============ -->
+      <!-- ============ Top bar ============ -->
       <header class="topbar">
         <div class="brand">
           <img class="brand-logo" src="assets/datalab-logo.png" alt="DataLab" />
           <div class="brand-text">
             <span class="brand-mark">Data<span class="brand-accent">Lab</span></span>
-            <span class="brand-sub">UC&nbsp;Davis</span>
+            <span class="brand-sub">UC&nbsp;Davis&nbsp;·&nbsp;Data Science for Discovery</span>
           </div>
         </div>
 
         <div class="topbar-right">
           <div class="hours-block" id="hours-block" data-status="unknown">
+            <span class="hours-key" aria-hidden="true"></span>
             <div id="hours-text" class="hours-text">Shields Library</div>
           </div>
           <div class="clock">
@@ -33,11 +35,14 @@
 
       <!-- Closing-soon banner -->
       <div id="closing-banner" class="closing-banner" hidden>
-        <span class="closing-icon">⏰</span>
+        <span class="closing-dot" aria-hidden="true"></span>
         <span id="closing-banner-text">Shields Library closes soon</span>
       </div>
 
-      <!-- ============ Tier 1: Featured project ============ -->
+      <!-- ============ Scale / breadth stats ============ -->
+      <section id="stats" class="stats" aria-label="At a glance"></section>
+
+      <!-- ============ Featured project ============ -->
       <section class="featured-wrap" aria-label="Featured project">
         <div class="tier-head">
           <span class="tier-label">Featured Project</span>
@@ -45,7 +50,7 @@
         <article id="featured" class="featured"></article>
       </section>
 
-      <!-- ============ Tier 2: Active Projects board (paged) ============ -->
+      <!-- ============ Active Projects board (paged) ============ -->
       <section class="board-wrap" aria-label="Active projects">
         <div class="tier-head">
           <span class="tier-label">Active Projects</span>
@@ -58,7 +63,7 @@
         <div id="board" class="board"></div>
       </section>
 
-      <!-- ============ Tier 3: Workshops / Past work (compact) ============ -->
+      <!-- ============ Workshops / Past work (compact) ============ -->
       <section class="rail-wrap" aria-label="Workshops and past work">
         <div class="rail-inner">
           <span id="rail-label" class="rail-label">Selected Past Work</span>

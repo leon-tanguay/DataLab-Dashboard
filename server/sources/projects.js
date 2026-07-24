@@ -90,6 +90,7 @@ function mapRow(row) {
     link: cleanLink(field(row, 'Public Product Link', 'DataLab webpage url')),
     image: imageUrl(field(row, 'Image')),
     startYear,
+    funded: /extern|grant|funded/i.test(field(row, 'Source', 'Category')),
     status: field(row, 'Status').toLowerCase(),
   };
 }
@@ -111,7 +112,37 @@ export async function fetchProjects() {
     .filter((p) => config.projects.completedStatuses.includes(p.status) && (p.name || p.title))
     .map((p) => ({ name: p.name || p.title, lead: p.lead, domain: p.domain, startYear: p.startYear }));
 
-  return { active, completed, counts: { active: active.length, completed: completed.length } };
+  // Scale/breadth stats across all real (active + completed) work — the headline
+  // numbers that show a walk-in donor how much and how widely the lab operates.
+  const real = rows.filter(
+    (p) =>
+      config.projects.activeStatuses.includes(p.status) ||
+      config.projects.completedStatuses.includes(p.status)
+  );
+  const uniq = (vals) =>
+    new Set(
+      vals
+        .map((v) => realish(v))
+        .filter(Boolean)
+        .map((v) => v.toLowerCase())
+    ).size;
+  const years = real.map((p) => p.startYear).filter(Boolean);
+  const stats = {
+    active: active.length,
+    delivered: completed.length,
+    partners: uniq(real.map((p) => p.facultyPartner)),
+    departments: uniq(real.map((p) => p.department)),
+    domains: uniq(real.map((p) => p.domain)),
+    sinceYear: years.length ? Math.min(...years) : null,
+  };
+
+  return { active, completed, stats, counts: { active: active.length, completed: completed.length } };
+}
+
+// Treat sheet filler ("internal", "N/A", "TBD", "-") as no value for uniqueness counts.
+function realish(v) {
+  const s = (v || '').trim();
+  return !s || /^(internal|n\/?a|tbd|none|-|—)$/i.test(s) ? '' : s;
 }
 
 // CLI: `npm run fetch:projects`

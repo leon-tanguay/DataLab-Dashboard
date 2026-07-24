@@ -13,6 +13,7 @@ const state = {
   config: { projectRotateSec: 15, pollMs: 45000, warnMinutes: [15, 5], locationName: 'Shields Library' },
   active: [],
   completed: [],
+  stats: null,
   workshops: [],
   hours: null,
   featIndex: 0,
@@ -30,12 +31,27 @@ const esc = (s) =>
   String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const initials = (name) => {
   const p = (name || '').split(/\s+/).filter(Boolean);
-  return p.length ? (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase() : '★';
+  return p.length ? (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase() : '';
 };
 const realName = (v) => {
   const s = (v || '').trim();
   return !s || /^(internal|n\/?a|tbd|none)$/i.test(s) ? '' : s;
 };
+
+// Color-code by research domain so the breadth of fields reads at a glance.
+const DOMAIN_COLORS = [
+  [/health|medic|clinical|brain|disease/i, '#ff6f7d'],
+  [/life|bio|ecolog|genom|plant|animal/i, '#4fd08a'],
+  [/environ|climate|water|geo|earth|spatial/i, '#3fb6c4'],
+  [/human|art|cultur|histor|literat|language/i, '#ffc24d'],
+  [/social|policy|econom|education|justice/i, '#a99bff'],
+  [/data|method|engineer|comput|software|ai|machine/i, '#5aa9ff'],
+];
+function domainColor(domain) {
+  const d = (domain || '').toLowerCase();
+  for (const [re, col] of DOMAIN_COLORS) if (re.test(d)) return col;
+  return '#8aa4c2';
+}
 
 /* ---------------- fetch ---------------- */
 async function getJSON(path) {
@@ -56,10 +72,12 @@ async function poll() {
       active.length !== state.active.length || (active[0] && active[0].name) !== (state.active[0] && state.active[0].name);
     state.active = active;
     state.completed = (p.data && p.data.completed) || [];
+    state.stats = (p.data && p.data.stats) || null;
     state.workshops = w.data || [];
     state.hours = h.data || null;
     state.failures = 0;
 
+    renderStats();
     renderBoard();
     renderRail();
     if (activeChanged || !$('#featured').dataset.rendered) {
@@ -76,6 +94,26 @@ async function poll() {
 }
 function setConn(ok) { $('#conn').hidden = ok || state.failures < 2; }
 
+/* ---------------- Scale / breadth stats ---------------- */
+function renderStats() {
+  const s = state.stats;
+  const el = $('#stats');
+  if (!s) { el.innerHTML = ''; return; }
+  const cells = [
+    [s.active, 'Active Projects'],
+    [s.domains, 'Fields of Study'],
+    [s.partners, 'Faculty & Partners'],
+    [s.departments, 'Departments & Units'],
+    [s.delivered, 'Projects Delivered'],
+  ].filter(([n]) => n != null && n !== 0);
+  el.innerHTML = cells
+    .map(
+      ([n, label]) =>
+        `<div class="stat"><div class="stat-num">${n}</div><div class="stat-label">${label}</div></div>`
+    )
+    .join('');
+}
+
 /* ---------------- Tier 1: Active Projects board (paged) ---------------- */
 function sortedActive() {
   // Newest first by start year, then alphabetical.
@@ -83,14 +121,19 @@ function sortedActive() {
     (a, b) => (b.startYear || 0) - (a.startYear || 0) || (a.name || '').localeCompare(b.name || '')
   );
 }
+// How many rows fit the (variable-height) board band, so pages never clip.
+function rowsPerPage() {
+  const h = $('#board').clientHeight || 360;
+  return Math.max(4, Math.floor(h / 46));
+}
 function boardPageCount() {
-  return state.active.length > 9 ? 2 : 1;
+  return Math.max(1, Math.ceil(state.active.length / rowsPerPage()));
 }
 function boardRow(p) {
   const partner = realName(p.facultyPartner) || p.department || '';
   const tags = [...(p.themes || []), ...(p.approaches || [])].slice(0, 2);
   return `<div class="board-row">
-    <div class="br-name"><span class="br-title">${esc(p.name || p.title)}</span></div>
+    <div class="br-name"><span class="br-swatch" style="--sw:${domainColor(p.domain)}"></span><span class="br-title">${esc(p.name || p.title)}</span></div>
     <div class="br-lead">${esc(p.lead || '—')}</div>
     <div class="br-partner">${esc(partner || '—')}</div>
     <div class="br-focus">${tags.map((t) => `<span class="br-tag">${esc(t)}</span>`).join('') || '<span class="br-partner">—</span>'}</div>
@@ -99,10 +142,10 @@ function boardRow(p) {
 }
 function renderBoardPage() {
   const list = sortedActive();
-  const pages = boardPageCount();
-  const size = Math.ceil(list.length / pages);
+  const pages = Math.max(1, Math.ceil(list.length / rowsPerPage()));
+  const per = Math.ceil(list.length / pages); // balance rows across pages
   state.boardPage = ((state.boardPage % pages) + pages) % pages;
-  const rows = list.slice(state.boardPage * size, (state.boardPage + 1) * size);
+  const rows = list.slice(state.boardPage * per, state.boardPage * per + per);
   $('#board').innerHTML = rows.map(boardRow).join('');
   $('#board-pages').innerHTML =
     pages > 1 ? Array.from({ length: pages }, (_, i) => `<span class="pg ${i === state.boardPage ? 'on' : ''}"></span>`).join('') : '';
@@ -142,8 +185,9 @@ function buildFeatured(p) {
     ...(p.themes || []).slice(0, 2).map((t) => `<span class="f-chip theme">${esc(t)}</span>`),
     ...(p.approaches || []).slice(0, 2).map((a) => `<span class="f-chip">${esc(a)}</span>`),
   ].join('');
+  const accent = domainColor(p.domain);
   return `
-    <div class="f-eyebrow">${esc(p.name || 'DataLab')}${p.domain ? `<span class="f-domain">${esc(p.domain)}</span>` : ''}</div>
+    <div class="f-eyebrow" style="--accent:${accent}">${esc(p.name || 'DataLab')}${p.domain ? `<span class="f-domain">${esc(p.domain)}</span>` : ''}${p.funded ? `<span class="f-fund">Externally Funded</span>` : ''}</div>
     <div class="f-title">${esc(headline)}</div>
     ${desc ? `<div class="f-desc">${esc(desc)}</div>` : ''}
     <div class="f-foot">
@@ -162,7 +206,10 @@ function renderFeatured(immediate) {
     return;
   }
   const p = list[state.featIndex % list.length];
-  const swap = () => { el.innerHTML = buildFeatured(p); el.dataset.rendered = '1'; el.classList.remove('fading'); };
+  const swap = () => {
+    el.style.setProperty('--accent', domainColor(p.domain));
+    el.innerHTML = buildFeatured(p); el.dataset.rendered = '1'; el.classList.remove('fading');
+  };
   if (immediate || !el.dataset.rendered) swap();
   else { el.classList.add('fading'); setTimeout(swap, 550); }
 }
@@ -197,7 +244,7 @@ function renderPastwork() {
   const one = items
     .map(
       (c) =>
-        `<span class="ticker-item"><b>${esc(c.name)}</b>${c.startYear ? `<span class="ty">${c.startYear}</span>` : ''}<span class="ti-sep">✦</span></span>`
+        `<span class="ticker-item"><b>${esc(c.name)}</b>${c.startYear ? `<span class="ty">${c.startYear}</span>` : ''}<span class="ti-sep"></span></span>`
     )
     .join('');
   track.innerHTML = one + one;
@@ -235,8 +282,18 @@ function fmtDayTime(iso) {
   const same = d.toDateString() === new Date().toDateString();
   return `${same ? 'today' : d.toLocaleDateString('en-US', { weekday: 'long' })} at ${fmtTime(iso)}`;
 }
+// Optional preview override: ?demo=open|closing|closed lets staff (and design work)
+// see any state regardless of the real hour.
+const DEMO = new URLSearchParams(location.search).get('demo');
+function demoHours() {
+  const iso = (ms) => new Date(Date.now() + ms).toISOString();
+  if (DEMO === 'open') return { status: 'open', is24: false, closesAt: iso(3 * 3600e3) };
+  if (DEMO === 'closing') return { status: 'open', is24: false, closesAt: iso(8 * 60e3) };
+  if (DEMO === 'closed') return { status: 'closed', opensAt: iso(9 * 3600e3) };
+  return null;
+}
 function currentHours() {
-  const h = state.hours;
+  const h = demoHours() || state.hours;
   if (!h) return null;
   const c = { ...h };
   if (h.status === 'open' && !h.is24 && h.closesAt) c.minutesToClose = Math.round((new Date(h.closesAt) - Date.now()) / 60000);
