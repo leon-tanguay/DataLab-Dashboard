@@ -11,7 +11,7 @@
     <div class="bg-grid" aria-hidden="true"></div>
 
     <div id="app" class="app">
-      <!-- ============ Top bar ============ -->
+      <!-- ============ Top bar (brand · cycling accomplishments · hours) ============ -->
       <header class="topbar">
         <div class="brand">
           <img class="brand-logo" src="assets/datalab-logo.png" alt="DataLab" />
@@ -20,6 +20,8 @@
             <span class="brand-sub">UC&nbsp;Davis&nbsp;·&nbsp;Data Science for Discovery</span>
           </div>
         </div>
+
+        <div class="statcycle" id="statcycle" aria-label="At a glance"></div>
 
         <div class="topbar-right">
           <div class="hours-block" id="hours-block" data-status="unknown">
@@ -38,9 +40,6 @@
         <span class="closing-dot" aria-hidden="true"></span>
         <span id="closing-banner-text">Shields Library closes soon</span>
       </div>
-
-      <!-- ============ Scale / breadth stats ============ -->
-      <section id="stats" class="stats" aria-label="At a glance"></section>
 
       <!-- ============ Featured project ============ -->
       <section class="featured-wrap" aria-label="Featured project">
@@ -75,6 +74,32 @@
       </section>
 
       <div id="conn" class="conn" hidden><span class="conn-dot"></span> reconnecting</div>
+    </div>
+
+    <!-- Hidden test-mode hotspot + menu (bottom-right corner) -->
+    <div id="test-toggle" title="Test mode"></div>
+    <div id="test-menu" class="test-menu" hidden>
+      <div class="tm-head">Test Mode</div>
+      <div class="tm-group">
+        <div class="tm-label">Library status</div>
+        <div class="tm-row" id="tm-mode">
+          <button data-mode="live" class="on">Live</button>
+          <button data-mode="open">Open</button>
+          <button data-mode="closing">Closing soon</button>
+          <button data-mode="closed">Closed</button>
+        </div>
+      </div>
+      <div class="tm-group">
+        <div class="tm-label">Workshops</div>
+        <div class="tm-row" id="tm-ws">
+          <button data-ws="live" class="on">Real</button>
+          <button data-ws="fake">Fake sample</button>
+        </div>
+      </div>
+      <div class="tm-actions">
+        <button id="tm-chime">Test closing chime</button>
+        <button id="tm-close">Close</button>
+      </div>
     </div>
 
     <!-- Full-screen CLOSED takeover -->

@@ -5,9 +5,27 @@
 // Tier 3: compact rail — upcoming workshops, else scrolling past work.
 // Resilient: never blanks on error — keeps last render, shows a "reconnecting" dot.
 
-import { evaluate, primeAudio } from './alerts.js';
+import { evaluate, primeAudio, testChime } from './alerts.js';
 
 const $ = (s) => document.querySelector(s);
+
+// Runtime overrides driven by the hidden test menu (and ?demo= on first load).
+const override = {
+  mode: new URLSearchParams(location.search).get('demo') || 'live', // live|open|closing|closed
+  fakeWorkshops: false,
+};
+const futureISO = (days, hour) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, 0, 0, 0);
+  return d.toISOString();
+};
+const FAKE_WORKSHOPS = [
+  { title: 'Introduction to Python for Data Science', start: futureISO(6, 10), location: 'Shields 360' },
+  { title: 'Reproducible Research with R & Quarto', start: futureISO(9, 13), location: 'Online' },
+  { title: 'Geospatial Analysis Fundamentals', start: futureISO(13, 10), location: 'DataLab' },
+  { title: 'Introduction to Machine Learning', start: futureISO(20, 14), location: 'Online' },
+];
 
 const state = {
   config: { projectRotateSec: 15, pollMs: 45000, warnMinutes: [15, 5], locationName: 'Shields Library' },
@@ -73,7 +91,8 @@ async function poll() {
     state.active = active;
     state.completed = (p.data && p.data.completed) || [];
     state.stats = (p.data && p.data.stats) || null;
-    state.workshops = w.data || [];
+    state._realWs = w.data || [];
+    state.workshops = override.fakeWorkshops ? FAKE_WORKSHOPS : state._realWs;
     state.hours = h.data || null;
     state.failures = 0;
 
@@ -94,24 +113,40 @@ async function poll() {
 }
 function setConn(ok) { $('#conn').hidden = ok || state.failures < 2; }
 
-/* ---------------- Scale / breadth stats ---------------- */
-function renderStats() {
+/* ---------------- Cycling accomplishments (header) ---------------- */
+let statTimer = null;
+let statIndex = 0;
+function statItems() {
   const s = state.stats;
-  const el = $('#stats');
-  if (!s) { el.innerHTML = ''; return; }
-  const cells = [
+  if (!s) return [];
+  const items = [
     [s.active, 'Active Projects'],
-    [s.domains, 'Fields of Study'],
+    [s.delivered, 'Projects Delivered'],
     [s.partners, 'Faculty & Partners'],
     [s.departments, 'Departments & Units'],
-    [s.delivered, 'Projects Delivered'],
+    [s.domains, 'Fields of Study'],
   ].filter(([n]) => n != null && n !== 0);
-  el.innerHTML = cells
-    .map(
-      ([n, label]) =>
-        `<div class="stat"><div class="stat-num">${n}</div><div class="stat-label">${label}</div></div>`
-    )
-    .join('');
+  if (s.sinceYear) items.push([new Date().getFullYear() - s.sinceYear, 'Years of Impact']);
+  return items;
+}
+function showStat(i) {
+  const items = statItems();
+  if (!items.length) { $('#statcycle').innerHTML = ''; return; }
+  const [n, label] = items[i % items.length];
+  $('#statcycle').innerHTML =
+    `<div class="sc-item in"><span class="sc-num">${n}</span><span class="sc-label">${esc(label)}</span></div>`;
+}
+function renderStats() {
+  const items = statItems();
+  clearInterval(statTimer);
+  if (!items.length) { $('#statcycle').innerHTML = ''; return; }
+  statIndex %= items.length;
+  showStat(statIndex);
+  statTimer = setInterval(() => {
+    const n = statItems().length || 1;
+    statIndex = (statIndex + 1) % n;
+    showStat(statIndex);
+  }, 3600);
 }
 
 /* ---------------- Tier 1: Active Projects board (paged) ---------------- */
@@ -282,14 +317,11 @@ function fmtDayTime(iso) {
   const same = d.toDateString() === new Date().toDateString();
   return `${same ? 'today' : d.toLocaleDateString('en-US', { weekday: 'long' })} at ${fmtTime(iso)}`;
 }
-// Optional preview override: ?demo=open|closing|closed lets staff (and design work)
-// see any state regardless of the real hour.
-const DEMO = new URLSearchParams(location.search).get('demo');
 function demoHours() {
   const iso = (ms) => new Date(Date.now() + ms).toISOString();
-  if (DEMO === 'open') return { status: 'open', is24: false, closesAt: iso(3 * 3600e3) };
-  if (DEMO === 'closing') return { status: 'open', is24: false, closesAt: iso(8 * 60e3) };
-  if (DEMO === 'closed') return { status: 'closed', opensAt: iso(9 * 3600e3) };
+  if (override.mode === 'open') return { status: 'open', is24: false, closesAt: iso(3 * 3600e3) };
+  if (override.mode === 'closing') return { status: 'open', is24: false, closesAt: iso(8 * 60e3) };
+  if (override.mode === 'closed') return { status: 'closed', opensAt: iso(9 * 3600e3) };
   return null;
 }
 function currentHours() {
@@ -348,9 +380,40 @@ function tick() {
   if (state.hours) renderHours();
 }
 
+/* ---------------- test menu ---------------- */
+function setActive(row, matchAttr, val) {
+  [...row.children].forEach((b) => b.classList.toggle('on', b.dataset[matchAttr] === val));
+}
+function setupTestMenu() {
+  const toggle = $('#test-toggle');
+  const menu = $('#test-menu');
+  toggle.addEventListener('click', () => { menu.hidden = !menu.hidden; });
+  $('#tm-close').addEventListener('click', () => { menu.hidden = true; });
+
+  $('#tm-mode').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    override.mode = b.dataset.mode;
+    setActive(e.currentTarget, 'mode', override.mode);
+    renderHours();
+  });
+  $('#tm-ws').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    override.fakeWorkshops = b.dataset.ws === 'fake';
+    setActive(e.currentTarget, 'ws', b.dataset.ws);
+    state.workshops = override.fakeWorkshops ? FAKE_WORKSHOPS : (state._realWs || []);
+    state.railMode = override.fakeWorkshops ? 'workshops' : 'past'; // show the change immediately
+    renderRail();
+  });
+  $('#tm-chime').addEventListener('click', testChime);
+
+  // Reflect any ?demo= mode already in effect.
+  setActive($('#tm-mode'), 'mode', override.mode);
+}
+
 /* ---------------- boot ---------------- */
 async function boot() {
   primeAudio();
+  setupTestMenu();
   await loadConfig();
   tick();
   setInterval(tick, 1000);

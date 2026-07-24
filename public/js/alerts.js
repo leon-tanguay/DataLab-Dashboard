@@ -53,6 +53,11 @@ function chimeUrgent() {
   bell(1318.5, t + 0.7, 1.4, 0.32);
 }
 
+// Play a chime on demand (test menu).
+export function testChime() {
+  chimeUrgent();
+}
+
 // Attempt to unlock audio on first user gesture (kiosk browsers usually allow
 // autoplay, but this is a harmless safety net).
 export function primeAudio() {
