@@ -43,6 +43,9 @@ const state = {
 let featTimer = null;
 let railTimer = null;
 let boardTimer = null;
+let pastTimer = null;
+let pastCloseTimer = null;
+let cursorTimer = null;
 
 /* ---------------- utils ---------------- */
 const esc = (s) =>
@@ -270,27 +273,52 @@ function renderWorkshops() {
     })
     .join('');
 }
-function renderPastwork() {
-  const track = $('#ticker-track');
-  const items = (state.completed || []).filter((c) => c.name);
-  if (!items.length) { track.innerHTML = ''; return; }
-  // Newest first, grouped by year with a serif year marker between groups.
-  const sorted = [...items].sort((a, b) => (b.year || 0) - (a.year || 0) || a.name.localeCompare(b.name));
-  let cur = null;
-  const one = sorted
-    .map((c) => {
-      let head = '';
-      if (c.year && c.year !== cur) { cur = c.year; head = `<span class="pp-year">${c.year}</span>`; }
-      const sub = [c.lead, realName(c.facultyPartner)].filter(Boolean).join(' · ') || c.domain || '';
-      return `${head}<span class="pp-card"><span class="pp-swatch" style="--sw:${domainColor(c.domain)}"></span>` +
-        `<span class="pp-body"><b>${esc(c.name)}</b><small>${esc(sub)}</small></span></span>`;
-    })
-    .join('');
-  track.innerHTML = one + one; // duplicate for seamless loop
-  requestAnimationFrame(() => {
-    const half = track.scrollWidth / 2;
-    track.style.setProperty('--ticker-duration', `${Math.max(90, Math.round(half / 45))}s`);
-  });
+// Past projects, newest first, as a broadcast "lower-third": advance to a
+// project, wipe it open to fill the band with rich info, hold ~5s, close, repeat.
+function pastList() {
+  return [...(state.completed || []).filter((c) => c.name)].sort(
+    (a, b) => (b.year || 0) - (a.year || 0) || a.name.localeCompare(b.name)
+  );
+}
+function pastCardHTML(p) {
+  const partner = realName(p.facultyPartner);
+  const meta = [p.lead && `Led by ${p.lead}`, partner && `with ${partner}`, p.domain]
+    .filter(Boolean)
+    .join(' · ');
+  return `<span class="ppf-year">${p.year || ''}</span>
+    <div class="ppf-body"><b class="ppf-name">${esc(p.name)}</b><span class="ppf-meta">${esc(meta)}</span></div>`;
+}
+function showPast(i) {
+  const list = pastList();
+  const el = $('#pp-feature');
+  if (!list.length) { el.innerHTML = ''; return; }
+  const p = list[((i % list.length) + list.length) % list.length];
+  el.style.setProperty('--accent', domainColor(p.domain));
+  el.innerHTML = pastCardHTML(p);
+  el.classList.remove('close');
+  void el.offsetWidth; // restart animation
+  el.classList.add('open');
+}
+function startPastCycle() {
+  clearInterval(pastTimer);
+  clearTimeout(pastCloseTimer);
+  const list = pastList();
+  if (!list.length) { $('#pp-feature').innerHTML = ''; return; }
+  state.pastIndex = (((state.pastIndex || 0) % list.length) + list.length) % list.length;
+  showPast(state.pastIndex);
+  pastTimer = setInterval(() => {
+    const el = $('#pp-feature');
+    el.classList.remove('open');
+    el.classList.add('close'); // slide the current story away
+    pastCloseTimer = setTimeout(() => {
+      state.pastIndex = (state.pastIndex + 1) % pastList().length;
+      showPast(state.pastIndex);
+    }, 450);
+  }, 5500);
+}
+function stopPastCycle() {
+  clearInterval(pastTimer);
+  clearTimeout(pastCloseTimer);
 }
 function showRail(mode) {
   state.railMode = mode;
@@ -299,8 +327,8 @@ function showRail(mode) {
   $('#rail-label').textContent = useWs ? 'Upcoming Workshops' : 'Past Projects';
   $('#workshop-list').hidden = !useWs;
   $('#pastwork').hidden = useWs;
-  if (useWs) renderWorkshops();
-  else renderPastwork();
+  if (useWs) { stopPastCycle(); renderWorkshops(); }
+  else startPastCycle();
 }
 function renderRail() {
   const hasWs = (state.workshops || []).length > 0;
@@ -414,9 +442,21 @@ function setupTestMenu() {
   setActive($('#tm-mode'), 'mode', override.mode);
 }
 
+// Show the cursor while the mouse is moving; hide it again after a short idle,
+// so the hidden hotspot is easy to find without leaving a pointer on the TV.
+function setupCursor() {
+  const show = () => {
+    document.body.classList.add('show-cursor');
+    clearTimeout(cursorTimer);
+    cursorTimer = setTimeout(() => document.body.classList.remove('show-cursor'), 2500);
+  };
+  window.addEventListener('mousemove', show, { passive: true });
+}
+
 /* ---------------- boot ---------------- */
 async function boot() {
   primeAudio();
+  setupCursor();
   setupTestMenu();
   await loadConfig();
   tick();

@@ -58,6 +58,8 @@ body {
   text-rendering: optimizeLegibility;
   cursor: none;
 }
+/* Cursor reappears while the mouse is moving (see setupCursor), then idle-hides. */
+body.show-cursor { cursor: default; }
 
 /* Editorial background: one confident deep field + a faint technical grid that
    fades toward the edges. No "breathing" multi-glow gradient. */
@@ -97,7 +99,7 @@ body {
 .brand-logo { height: clamp(32px, 2.7vw, 48px); width: auto; }
 .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand-mark { font-weight: 700; font-size: clamp(20px, 1.9vw, 34px); letter-spacing: -0.02em; }
-.brand-accent { color: var(--gold); }
+.brand-accent { color: inherit; }
 .brand-sub { color: var(--ink-dim); font-weight: 600; letter-spacing: 0.16em;
   text-transform: uppercase; font-size: clamp(8px, 0.66vw, 12px); margin-top: 4px; }
 
@@ -223,23 +225,29 @@ body {
   font-weight: 700; color: var(--gold); white-space: nowrap; padding-left: 15px; position: relative; }
 .rail-label::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 7px; height: 7px; border-radius: 2px; background: var(--gold); }
-.pastwork { flex: 1; min-width: 0; display: flex; align-items: center; }
-.ticker-viewport { position: relative; flex: 1; overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
-.ticker-track { display: inline-flex; align-items: center; white-space: nowrap; will-change: transform;
-  animation: scroll-left var(--ticker-duration, 120s) linear infinite; }
-/* Past-project mini-highlights, grouped by year */
-.pp-year { display: inline-flex; align-items: center; font-family: var(--font-serif); font-weight: 600;
-  font-size: clamp(20px, 1.9vw, 34px); color: var(--gold); padding: 0 clamp(16px, 1.7vw, 30px); }
-.pp-card { display: inline-flex; align-items: center; gap: 11px; padding: 0 clamp(14px, 1.5vw, 26px);
-  border-left: 1px solid var(--line-soft); }
-.pp-swatch { width: 9px; height: 9px; border-radius: 2px; background: var(--sw, var(--teal)); flex: none;
-  box-shadow: 0 0 7px -1px var(--sw, var(--teal)); }
-.pp-body { display: inline-flex; flex-direction: column; line-height: 1.16; }
-.pp-body b { font-weight: 700; font-size: clamp(13px, 1.08vw, 19px); color: var(--ink); }
-.pp-body small { font-size: clamp(10px, 0.86vw, 14px); color: var(--ink-dim); }
-@keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.pastwork { flex: 1; min-width: 0; display: flex; align-items: center; overflow: hidden; }
+/* One past project at a time — broadcast lower-third that wipes open, holds, closes. */
+.pp-feature { position: relative; flex: 1; min-width: 0; display: flex; align-items: center;
+  gap: clamp(16px, 1.7vw, 30px); padding-left: clamp(14px, 1.4vw, 22px); }
+.pp-feature::before { content: ""; position: absolute; left: 0; top: 14%; bottom: 14%; width: 4px;
+  border-radius: 2px; background: var(--accent, var(--gold)); }
+.pp-feature.open { animation: pp-open 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.pp-feature.close { animation: pp-close 0.42s ease both; }
+.ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--gold);
+  font-size: clamp(22px, 2.1vw, 38px); font-variant-numeric: tabular-nums; }
+.ppf-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ppf-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(16px, 1.55vw, 28px);
+  color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ppf-meta { font-size: clamp(12px, 1.05vw, 18px); color: var(--ink-dim); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+@keyframes pp-open {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(26px); }
+  to   { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
+}
+@keyframes pp-close {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-44px); }
+}
 
 /* Workshops view (row of compact cards) */
 .workshop-list { list-style: none; padding: 0; margin: 0; flex: 1; min-width: 0;
