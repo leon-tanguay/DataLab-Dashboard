@@ -251,10 +251,10 @@ body.show-cursor { cursor: default; }
   text-transform: uppercase; font-size: clamp(8px, 0.68vw, 12px); }
 
 .topbar-right { display: flex; align-items: center; gap: clamp(10px, 1vw, 19px); min-width: 0; }
-.hours-block { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hours-block { display: flex; align-items: center; gap: 7px; min-width: 0; }
 /* Status dot: an expanding ring (transform/opacity only) reads as "live" from
    across the room without the neon-glow blur a box-shadow halo would give. */
-.hours-key { position: relative; width: 10px; height: 10px; border-radius: 50%;
+.hours-key { position: relative; width: 8px; height: 8px; border-radius: 50%;
   background: var(--ink-faint); flex: none; transition: background-color var(--dur) ease; }
 .hours-key::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
   border: 2px solid currentColor; opacity: 0; }
@@ -263,7 +263,7 @@ body.show-cursor { cursor: default; }
 .hours-block[data-status="closing"] .hours-key { background: var(--danger-soft); color: var(--danger-soft); }
 .hours-block[data-status="closing"] .hours-key::after { animation: ping 1s var(--ease-out) infinite; }
 .hours-block[data-status="closed"] .hours-key { background: var(--danger); }
-@keyframes ping { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.6); opacity: 0; } }
+@keyframes ping { from { transform: scale(1); opacity: 0.75; } to { transform: scale(2.1); opacity: 0; } }
 /* Back in the top bar, but sized as utility text — present for the students who
    need it without competing with the figures beside it. */
 .hours-text { font-size: clamp(11px, 0.95vw, 17px); font-weight: 600; color: var(--ink-dim);
@@ -271,7 +271,7 @@ body.show-cursor { cursor: default; }
 .hours-block[data-status="open"] .hours-text { color: var(--ink-dim); }
 .hours-block[data-status="closing"] .hours-text { color: var(--danger-soft); }
 .hours-block[data-status="closed"] .hours-text { color: var(--danger); }
-.hours-text b { font-weight: 700; color: var(--ink); }
+.hours-text b { font-weight: 700; color: var(--ink); font-size: 1.15em; }
 
 /* Same mark-over-caption pattern as the brand and the figures. */
 .clock { display: flex; flex-direction: column; justify-content: center; gap: 4px;
@@ -294,7 +294,7 @@ body.show-cursor { cursor: default; }
 .stats { display: flex; align-items: stretch; margin-right: auto; flex: none;
   margin-left: clamp(16px, 1.8vw, 36px); }
 .stat { display: flex; flex-direction: column; justify-content: center; gap: 4px;
-  padding-left: clamp(20px, 2.2vw, 44px); }
+  padding-left: clamp(15px, 1.65vw, 33px); }
 .stat:first-child { padding-left: 0; }
 /* Same size and weight as .brand-mark, same caption as .brand-sub — the whole bar
    reads as one row of mark-over-caption blocks. */
@@ -428,7 +428,11 @@ body.show-cursor { cursor: default; }
   font-weight: 700; color: var(--ink-faint); }
 .board-header > span:nth-child(5) { text-align: right; }
 /* First header cell doubles as the tier heading (label + count) to save a row. */
-.board-h-main { display: flex; align-items: baseline; gap: 12px; letter-spacing: normal; }
+/* Pulled back out of the header inset so this label starts on the same line as
+   "Featured Project" and "Past Projects"; the other header cells stay aligned
+   with the row columns. Nudged up to sit level with LEAD / PARTNER / FOCUS. */
+.board-h-main { display: flex; align-items: baseline; gap: 12px; letter-spacing: normal;
+  margin-left: calc(var(--section-pad) * -1); transform: translateY(-2px); }
 .board-h-main .board-pages { margin-left: 12px; }
 /* minmax(0,1fr), not 1fr: the auto minimum would let a long cell push rows taller
    than their share and shove the last project past the bottom of the band. */
