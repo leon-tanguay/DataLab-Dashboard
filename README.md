@@ -1,23 +1,34 @@
 # DataLab Dashboard
 
-An always-on, full-screen TV dashboard for the UC Davis DataLab office, styled
-like a busy "trading floor" board so visitors and donors immediately see how much
-is going on. Three stacked tiers plus a top ticker bar:
+An always-on, full-screen TV dashboard for the UC Davis DataLab office, built to
+be read from across a room by visitors and donors walking past. A top bar plus
+three stacked bands:
 
-- **Top bar** — DataLab logo, a live "market" ticker (active-project counts by
-  domain + totals delivered), the **UC Davis Library logo** with Shields open/closed
-  status, and a clock.
-- **Tier 1 — Featured project** — a large, auto-cycling highlight of a strong active
-  project *with its description*, primary **lead**, faculty partner, and theme tags.
-- **Tier 2 — Active Portfolio** — a dense, auto-scrolling board of **every** active
-  project: Project · Lead · Partner · Focus · Since.
-- **Tier 3 — Workshops / Past work** — shows upcoming DataLab workshops when
-  scheduled; otherwise scrolls a marquee of completed projects. When both are
-  available it alternates between them.
+- **Top bar** — DataLab mark, four static headline figures (active projects,
+  projects delivered, faculty partners, departments), Shields Library open/closed
+  status, and a clock. The figures count up when the data changes but never
+  scroll: a moving ticker only ever gives a passer-by half a number.
+- **Featured project** — an auto-cycling highlight (every 12s) with headline,
+  blurb, and a credits column for lead, faculty partner and focus. The headline
+  is sized to fill the band, so short and long titles both land well.
+- **Active Projects** — every active project on screen at once, grouped by focus
+  and alphabetical within it: Project · Lead · Partner · Focus · Since. Row type
+  scales to fit whatever the count is; staff can cap rows per page from the test
+  menu, and a shorter page spends the extra height on wrapped text rather than
+  bigger type.
+- **Past Projects** — a crawl of completed work that aims: it marks its next
+  project (that entry brightens), eases onto it, and opens it as a lower-third
+  with year, title and credits.
 
 It also **warns before Shields Library closes** — a banner + chime at 15 and 5
 minutes before close, and a full-screen **CLOSED** takeover while the library is
 closed.
+
+**Colour means one thing each.** Gold is external funding, and nothing else — a
+funded project has a gold spine and a gold pill, so the funded work can be picked
+out of the board at a glance. Bright = recent or primary, green = library open,
+red = alert. Everything else is a neutral ramp. Five themes are switchable from
+the test menu.
 
 ## How it works
 
@@ -39,17 +50,104 @@ Chromium (kiosk) ── http://localhost:3000 ──> Express ── caches ─�
                                                  └─ LibCal hours
 ```
 
-## Quick start (development)
+## Running it
+
+Requires **Node.js ≥ 20** (`node --version` to check). Two pieces: a server you
+start once, and a browser you point at it.
+
+### 1. Start the server
+
+Open a terminal (PowerShell, cmd, Terminal — any) in the project folder:
 
 ```bash
-npm install
-npm start           # serves http://localhost:3000
+npm install     # first time only
+npm start
 ```
 
-Optionally copy `.env.example` to `.env` and tweak values — everything has working
-defaults, so it runs with no `.env` at all.
+You should see `DataLab dashboard running at http://localhost:3000`.
 
-Test the data adapters individually:
+**Leave that window open** — closing it stops the dashboard. Nothing else needs
+to happen in this window; the browser is separate.
+
+No `.env` is required. Everything has working defaults, and the server prints
+`.env not found. Continuing without it.` which is expected.
+
+### 2. Put it on screen
+
+The quickest way, any OS: open a browser to **`http://localhost:3000`** and press
+**F11** for full screen (F11 again to exit).
+
+For true kiosk mode — no tabs, no address bar, nothing to click out of — launch
+the browser directly at the URL. `Alt+F4` (or `Cmd+Q`) closes it.
+
+**Windows** — press `Win + R`, paste, Enter:
+
+```
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk --app="http://localhost:3000/"
+```
+
+The Run dialog handles the quoted path, so no terminal is needed. From PowerShell
+the same line needs a leading `& ` (the call operator); from cmd it works as-is.
+
+**macOS:**
+
+```bash
+open -na "Google Chrome" --args --kiosk --app="http://localhost:3000/"
+```
+
+**Linux:** see the systemd kiosk setup further down — that is the real deployment
+path for the display machine.
+
+### 3. Stopping it
+
+`Ctrl+C` in the terminal running `npm start`. If that window is gone:
+
+```bash
+npx kill-port 3000
+```
+
+### Testing outside opening hours
+
+Shields Library is genuinely closed at night, so the plain URL will correctly show
+the full-screen **CLOSED** takeover rather than the board. To demo anyway, add
+`?demo=open`:
+
+```
+http://localhost:3000/?demo=open
+```
+
+That is the single most useful thing to know when the board "won't come up".
+
+### URL parameters
+
+All optional, and they combine with `&`:
+
+| Parameter | Does |
+| --- | --- |
+| `?demo=open` | forces the board on regardless of real hours |
+| `?demo=closing` | previews the red closing banner |
+| `?demo=closed` | previews the CLOSED takeover |
+| `?theme=aggie` | `midnight` · `aggie` · `graphite` · `arboretum` · `daylight` |
+| `?inset=32` | pads all four edges, for TVs that overscan (max 120) |
+| `?motion=reduce` | the calm version — content still cycles, it just cuts |
+| `?motion=auto` | follow the display's own reduce-motion setting |
+
+Example: `http://localhost:3000/?demo=open&theme=aggie&inset=32`
+
+### The test menu (on-screen settings)
+
+There is an **invisible 70×70px hotspot in the very bottom-right corner** of the
+screen. Move the mouse there and the cursor becomes a gold reticle with a corner
+bracket — click to open Test Mode. It works even over the CLOSED takeover.
+
+It holds: library status (Live / Open / Closing soon / Closed), theme, active
+projects per page, real vs. sample workshops, and a chime test. **Theme and
+per-page are remembered on that display** across restarts; the others reset.
+
+Note that **Live** means "show reality" — if the library is actually closed, the
+takeover stays up. Use **Open** to force the board on.
+
+### Testing the data adapters individually
 
 ```bash
 npm run fetch:projects
@@ -154,9 +252,9 @@ server/
     workshops.js    Localist API -> upcoming events
     hours.js        LibCal grid -> open/closed state (timezone-aware)
 public/
-  index.html        3-tier layout (featured / board / rail)
-  css/style.css     DataLab-branded theme + bundled fonts
-  js/app.js         fetch loop, featured cycle, board, rail, hours
+  index.html        top bar + 3 bands (featured / board / rail) + test menu
+  css/style.css     theme tokens (5 palettes), layout, motion
+  js/app.js         fetch loop, featured cycle, board fitting, reel, hours
   js/alerts.js      Web Audio chimes + banner logic
   assets/           datalab-logo.png, ucd-library-logo.png, aggie-logo-white.svg
     fonts/          Montserrat woff2 (400–800)
@@ -166,17 +264,24 @@ deploy/
 
 ## Branding & fonts
 
-- **Logos**: `assets/datalab-logo.png` (top-left) and `assets/ucd-library-logo.png`
-  (the white UC Davis Library signature, used top-right and on the CLOSED screen).
-  `assets/aggie-logo-white.svg` (the campus Aggie mark) is included as an option.
+- **Logos**: `assets/datalab-logo.png` is the only one currently on screen
+  (top-left). `assets/ucd-library-logo.png` and `assets/aggie-logo-white.svg` are
+  kept in the repo as options but are not referenced by the page — the top-right
+  is given to the headline figures and the clock instead.
 - **Fonts**: UC Davis's official brand typeface is **Proxima Nova** (licensed). The
   CSS prefers it, so if you install Proxima Nova on the display machine (UC Davis
   staff can get it from the campus software site) it is used automatically. As an
   offline, license-safe fallback the repo bundles **Montserrat** (a close geometric
   match) in `assets/fonts/`. To swap in a different font, edit the `@font-face`
   rules and the `--font` variable at the top of `public/css/style.css`.
-- **Colors**: UC Davis Aggie navy + gold with a teal accent (CSS variables in
-  `:root`).
+- **Themes**: five palettes, switchable from the test menu and remembered per
+  display — **Midnight** (default navy), **Aggie** (UC Davis official `#022851` /
+  `#FFBF00`), **Graphite** (space grey), **Arboretum** (olive and oak),
+  **Daylight** (off-white). Pin one on a kiosk with `?theme=`.
+- **Adding a theme**: copy a `:root[data-theme="…"]` block at the top of
+  `public/css/style.css`, restate the tokens, and add the name to `THEMES` in
+  `public/js/app.js` plus a button in the test menu in `index.html`. Every rule
+  downstream reads those tokens, so no component needs touching.
 
 ## Troubleshooting
 
@@ -187,3 +292,19 @@ deploy/
   shows the last error. The display keeps last-good data meanwhile.
 - **No chime** — the kiosk must run Chromium with `--autoplay-policy=no-user-gesture-required`
   (already in `kiosk.sh`); in a normal browser, click once to unlock audio.
+- **Screen shows CLOSED instead of the board** — usually correct: Shields is shut.
+  Add `?demo=open`, or pick **Open** in the test menu. It clears itself when the
+  library reopens.
+- **Board looks frozen — nothing crawls or rotates** — the display has "reduce
+  animations" switched on at the OS level. Motion is forced on by default now, so
+  this should not happen; if it does, check the URL does not carry `?motion=reduce`
+  or `?motion=auto`.
+- **Top or edges cut off** — the TV is overscanning. Add `?inset=32` and adjust
+  until nothing is clipped.
+- **Text truncating with `…` on a short page** — expected only when a single
+  value is genuinely wider than its column. A capped page gives rows two or three
+  lines to wrap into first; if everything is truncating, the page cap is probably
+  set so low the type hit its 24px ceiling.
+- **Nothing on port 3000 / "site can't be reached"** — the `npm start` window was
+  closed. Restart it; the browser can stay open and will reconnect on its own
+  (a "reconnecting" dot appears bottom-left while the server is away).
