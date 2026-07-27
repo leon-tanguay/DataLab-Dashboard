@@ -74,16 +74,24 @@ if (Number.isFinite(insetParam) && insetParam > 0) {
 // Ease a value toward a target at a rate independent of frame timing.
 const approach = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
 
-// Count a number up to its new value — reads as a board ticking over, not a swap.
-function countTo(el, to, ms = 900) {
-  const from = Number(el.dataset.v || 0);
-  el.dataset.v = String(to);
-  if (reduceMotion || from === to) { el.textContent = to; return; }
+// Count every figure up together on ONE rAF clock, so numbers that belong to the
+// same sentence ("111 faculty partners across 69 departments") share an easing
+// curve and land on the exact same frame. Driving them from separate timers lets
+// them finish milliseconds apart, which reads as a stumble on a big screen.
+function countAll(entries, ms = 1100) {
+  const live = entries.filter((e) => e.el);
+  if (!live.length) return;
+  const from = live.map((e) => Number(e.el.dataset.v || 0));
+  live.forEach((e) => { e.el.dataset.v = String(e.to); });
+  if (reduceMotion || live.every((e, i) => from[i] === e.to)) {
+    live.forEach((e) => { e.el.textContent = e.to; });
+    return;
+  }
   const t0 = performance.now();
   const step = (t) => {
     const k = Math.min(1, (t - t0) / ms);
     const eased = 1 - Math.pow(1 - k, 3); // ease-out
-    el.textContent = Math.round(from + (to - from) * eased);
+    live.forEach((e, i) => { e.el.textContent = Math.round(from[i] + (e.to - from[i]) * eased); });
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -176,39 +184,61 @@ function setConn(ok) { $('#conn').hidden = ok || state.failures < 2; }
 function statItems() {
   const s = state.stats;
   if (!s) return [];
-  return [
-    [s.active, 'Active Projects'],
-    [s.delivered, 'Projects Delivered'],
-    [s.partners, 'Faculty Partners'],
-    [s.departments, 'Departments'],
-  ].filter(([n]) => n != null && n !== 0);
+  const items = [];
+  if (s.active) items.push({ key: 'active', nums: [s.active], label: 'Active Projects' });
+  if (s.delivered) items.push({ key: 'delivered', nums: [s.delivered], label: 'Projects Delivered' });
+  // Partners and departments say more together than apart: one is a headcount,
+  // the pair is a statement about reach across the university.
+  if (s.partners && s.departments) {
+    items.push({ key: 'reach', nums: [s.partners, s.departments], words: ['Faculty Partners Across', 'Departments'] });
+  } else if (s.partners) {
+    items.push({ key: 'partners', nums: [s.partners], label: 'Faculty Partners' });
+  }
+  return items;
 }
+// Reserve the final digit count so counting up can't reflow the sentence around
+// the numbers (tabular-nums makes 1ch exactly one digit's advance).
+const numSpan = (n) => `<span class="stat-num" style="min-width:${String(n).length}ch">0</span>`;
 let lastStatSig = '';
 function renderStats() {
   const items = statItems();
   const el = $('#stats');
   if (!items.length) { el.innerHTML = ''; lastStatSig = ''; return; }
-  const sig = items.map(([, l]) => l).join('|');
+  const sig = items.map((it) => it.key).join('|');
   if (sig !== lastStatSig) {
     lastStatSig = sig;
     el.innerHTML = items
-      .map(([, l], i) => `<div class="stat" data-k="${i}"><span class="stat-num">0</span>` +
-        `<span class="stat-label">${esc(l)}</span></div>`)
+      .map((it, i) => {
+        const body = it.words
+          ? `<span class="stat-reach">${numSpan(it.nums[0])}<span class="stat-word">${esc(it.words[0])}</span>` +
+            `${numSpan(it.nums[1])}<span class="stat-word">${esc(it.words[1])}</span></span>`
+          : `${numSpan(it.nums[0])}<span class="stat-label">${esc(it.label)}</span>`;
+        return `<div class="stat" data-k="${i}">${body}</div>`;
+      })
       .join('');
   }
-  // Counts up on first paint and on any later change; holds still otherwise.
-  items.forEach(([n], i) => {
-    const num = el.querySelector(`.stat[data-k="${i}"] .stat-num`);
-    if (num) countTo(num, Number(n));
+  // One clock for every figure on the bar, so they all land together.
+  const entries = [];
+  items.forEach((it, i) => {
+    const nums = el.querySelectorAll(`.stat[data-k="${i}"] .stat-num`);
+    it.nums.forEach((n, j) => entries.push({ el: nums[j], to: Number(n) }));
   });
+  countAll(entries);
 }
 
 /* ---------------- Tier 1: Active Projects board (paged) ---------------- */
+// Grouped by research domain, newest first inside each group. Clustering the
+// fields is what makes the board scannable — it shows the breadth structurally,
+// which is the job the seven-colour palette was failing to do. Projects with no
+// domain sort last so the gaps sit at the bottom rather than splitting a group.
 function sortedActive() {
-  // Newest first by start year, then alphabetical.
-  return [...state.active].sort(
-    (a, b) => (b.startYear || 0) - (a.startYear || 0) || (a.name || '').localeCompare(b.name || '')
-  );
+  const key = (p) => (p.domain || '').trim().toLowerCase();
+  return [...state.active].sort((a, b) => {
+    const ka = key(a);
+    const kb = key(b);
+    if (ka !== kb) return !ka - !kb || ka.localeCompare(kb); // blanks last
+    return (b.startYear || 0) - (a.startYear || 0) || (a.name || '').localeCompare(b.name || '');
+  });
 }
 // The board shows the whole portfolio at once by default — a donor walking past
 // should see every active project without waiting for a page turn. Rows compress
@@ -247,7 +277,11 @@ function fitBoard(rowCount) {
 }
 const boardPageCount = () => boardLayout().pages;
 const BOARD_PAGE_MS = 12000;
-function boardRow(p, i) {
+function boardRow(p, i, all) {
+  // A heavier rule where the domain changes, so the grouping is visible even
+  // when neighbouring rows show themes rather than the domain name itself.
+  const prev = all && all[i - 1];
+  const groupStart = i > 0 && prev && (prev.domain || '') !== (p.domain || '');
   // The department fallback needs the same cleanup as the partner field — it
   // carries unit paths like "CAES | Plant Sciences" straight from the sheet.
   const partner = realName(p.facultyPartner) || realName(p.department);
@@ -257,7 +291,7 @@ function boardRow(p, i) {
   let tags = [...(p.themes || []), ...(p.approaches || [])].slice(0, 2);
   if (!tags.length && p.domain) tags = [titleCase(p.domain)];
   const recent = p.startYear && p.startYear >= new Date().getFullYear() - 1;
-  return `<div class="board-row${p.funded ? ' funded' : ''}" style="--i:${i}">
+  return `<div class="board-row${p.funded ? ' funded' : ''}${groupStart ? ' group-start' : ''}" style="--i:${i}">
     <div class="br-name"><span class="br-swatch"></span><span class="br-title">${esc(prettyName(p.name || p.title))}</span></div>
     <div class="br-lead">${p.lead ? esc(p.lead) : '<span class="br-none">—</span>'}</div>
     <div class="br-partner">${partner ? esc(partner) : '<span class="br-none">—</span>'}</div>
@@ -279,7 +313,7 @@ function renderBoardPage() {
   const { pages, per } = boardLayout();
   state.boardPage = ((state.boardPage % pages) + pages) % pages;
   const rows = list.slice(state.boardPage * per, state.boardPage * per + per);
-  $('#board').innerHTML = rows.map(boardRow).join('');
+  $('#board').innerHTML = rows.map((p, i) => boardRow(p, i, rows)).join('');
   fitBoard(rows.length);
   // Rebuilt each turn so the active pill's fill animation restarts in step with
   // the dwell timer — the countdown always matches the real time remaining.

@@ -134,8 +134,8 @@ body.show-cursor { cursor: default; }
 .brand-sub { color: var(--ink-dim); font-weight: 600; letter-spacing: 0.16em;
   text-transform: uppercase; font-size: clamp(8px, 0.66vw, 12px); margin-top: 4px; }
 
-.topbar-right { display: flex; align-items: center; gap: clamp(14px, 1.4vw, 27px); }
-.hours-block { display: flex; align-items: center; gap: 10px; }
+.topbar-right { display: flex; align-items: center; gap: clamp(14px, 1.4vw, 27px); min-width: 0; }
+.hours-block { display: flex; align-items: center; gap: 10px; min-width: 0; }
 /* Status dot: an expanding ring (transform/opacity only) reads as "live" from
    across the room without the neon-glow blur a box-shadow halo would give. */
 .hours-key { position: relative; width: 10px; height: 10px; border-radius: 50%;
@@ -148,31 +148,45 @@ body.show-cursor { cursor: default; }
 .hours-block[data-status="closing"] .hours-key::after { animation: ping 1s var(--ease-out) infinite; }
 .hours-block[data-status="closed"] .hours-key { background: var(--danger); }
 @keyframes ping { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.6); opacity: 0; } }
-/* Sized as utility text, not a headline — this is secondary information now. */
-.hours-text { font-size: clamp(10px, 0.85vw, 15px); font-weight: 600; color: var(--ink-faint); white-space: nowrap; }
+/* Back in the top bar, but sized as utility text — present for the students who
+   need it without competing with the figures beside it. */
+.hours-text { font-size: clamp(11px, 0.92vw, 16px); font-weight: 600; color: var(--ink-faint);
+  white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .hours-block[data-status="open"] .hours-text { color: var(--ink-dim); }
 .hours-block[data-status="closing"] .hours-text { color: var(--danger-soft); }
 .hours-block[data-status="closed"] .hours-text { color: var(--danger); }
 .hours-text b { font-weight: 700; color: var(--ink); }
 
 .clock { text-align: right; line-height: 1.1; }
-.clock-time { font-weight: 700; font-size: clamp(14px, 1.2vw, 22px); font-variant-numeric: tabular-nums;
-  color: var(--ink-dim); }
-.clock-date { color: var(--ink-faint); font-size: clamp(8px, 0.66vw, 11px); font-weight: 500; letter-spacing: 0.02em; }
+.clock-time { font-weight: 700; font-size: clamp(16px, 1.35vw, 25px); font-variant-numeric: tabular-nums;
+  color: var(--ink); }
+.clock-date { color: var(--ink-faint); font-size: clamp(9px, 0.7vw, 12px); font-weight: 500; letter-spacing: 0.02em; }
 
 /* ---------------- Headline figures (static) ----------------
    Four numbers, always on screen, sized to be read across a room. Big bright
    numeral over a small dim label: hierarchy from weight and colour, and gold is
    left alone so it can keep meaning "funded" on the board below. */
-.stats { display: flex; align-items: stretch; margin-left: auto;
-  gap: clamp(18px, 2.2vw, 46px); min-width: 0; }
+/* Sits immediately left, beside the brand — the clock and hours take the far
+   right. margin-right:auto pushes that block away without centring these. */
+/* Never shrinks: if the bar runs out of room the library text truncates, not the
+   figures — a clipped "DEPARTMENT" is worse than a clipped closing time. */
+.stats { display: flex; align-items: stretch; margin-right: auto; flex: none;
+  gap: clamp(12px, 1.35vw, 27px); }
 .stat { display: flex; flex-direction: column; justify-content: center; gap: 3px;
-  padding-left: clamp(18px, 2.2vw, 46px); border-left: 1px solid var(--line-soft); }
+  padding-left: clamp(12px, 1.35vw, 27px); border-left: 1px solid var(--line-soft); }
 .stat:first-child { border-left: none; padding-left: 0; }
 .stat-num { font-size: clamp(20px, 2.05vw, 39px); font-weight: 800; letter-spacing: -0.02em;
-  color: var(--ink-bright); font-variant-numeric: tabular-nums; line-height: 1; }
+  color: var(--ink-bright); font-variant-numeric: tabular-nums; line-height: 1;
+  display: inline-block; text-align: center; }
 .stat-label { font-size: clamp(8px, 0.68vw, 12px); text-transform: uppercase; letter-spacing: 0.17em;
   color: var(--ink-faint); font-weight: 700; white-space: nowrap; }
+
+/* Reach reads as one sentence rather than two tiles — "111 faculty partners
+   across 69 departments" is a fact; two separate numbers are trivia. The
+   connective words sit in the label treatment so the figures still carry. */
+.stat-reach { display: flex; align-items: baseline; gap: 0.5em; white-space: nowrap; }
+.stat-reach .stat-word { font-size: clamp(8px, 0.68vw, 12px); text-transform: uppercase;
+  letter-spacing: 0.17em; color: var(--ink-faint); font-weight: 700; }
 
 /* ---------------- Tier heads ---------------- */
 .tier-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 5px; }
@@ -238,7 +252,11 @@ body.show-cursor { cursor: default; }
 .f-title { font-family: var(--font-serif); font-weight: 600; line-height: 1.12;
   font-size: clamp(16px, 1.48vw, 28px); letter-spacing: 0; color: var(--ink-bright);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.f-desc { color: var(--ink-dim); font-size: clamp(11px, 0.85vw, 15px); line-height: 1.38; max-width: 86ch;
+/* No measure cap: this is two clamped lines on a very wide screen, not a column
+   of body text, so the reading-measure rule works against it — capping the width
+   just forced longer blurbs to clip that much sooner. */
+.f-desc { color: var(--ink-dim); font-size: clamp(11px, 0.9vw, 16px); line-height: 1.4;
+  padding-right: clamp(12px, 1.5vw, 28px);
   min-height: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 /* The credit line is a footer, not a second headline — keeping it compact is what
    buys the blurb its two lines in a band this short. */
@@ -286,6 +304,8 @@ body.show-cursor { cursor: default; }
   transition: opacity 200ms var(--ease-in), transform 200ms var(--ease-in);
   transition-delay: calc(var(--i, 0) * 22ms); }
 .board-row:nth-child(odd) { background: var(--zebra); }
+/* Domain group break — a touch heavier than the row rule, no extra row spent. */
+.board-row.group-start { border-top: 1px solid rgba(255, 255, 255, 0.16); }
 .board-row:last-child { border-bottom: none; }
 .board.flip .board-row { opacity: 0; transform: translateY(-12px); }
 @keyframes row-in { from { opacity: 0; transform: translateY(16px); } }
@@ -322,20 +342,17 @@ body.show-cursor { cursor: default; }
   background: rgba(255, 193, 43, 0.09); font-weight: 700; letter-spacing: 0.04em; }
 /* Missing values recede rather than reading as three broken cells in a row. */
 .br-none { color: rgba(255, 255, 255, 0.14); }
-/* Recency reads as brightness, not hue — gold is spoken for. */
+/* Years read at one weight and one brightness: a dimmed year is harder to read
+   from across the room, and the board is sorted by domain now, so a recency
+   gradient down the column no longer lines up with anything. */
 .br-since { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;
-  font-size: calc(var(--row-font) * 0.88); color: var(--ink-faint); }
-.br-since.recent { color: var(--ink); font-weight: 700; }
+  font-size: calc(var(--row-font) * 0.88); color: var(--ink-bright); }
 
 /* ---------------- Workshops / Past projects ---------------- */
 .rail-wrap { display: flex; flex-direction: column; min-height: 0; }
 .rail-inner { flex: 1; min-width: 0; display: flex; align-items: center;
   background: var(--band); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 0 clamp(10px, 1vw, 19px); overflow: hidden; gap: clamp(12px, 1.3vw, 24px); }
-/* Library status + clock, docked at the end of the bottom rail. Separated by a
-   rule so it reads as a distinct utility block rather than part of the crawl. */
-.rail-aside { flex: none; display: flex; align-items: center; gap: clamp(12px, 1.3vw, 24px);
-  align-self: stretch; padding-left: clamp(12px, 1.3vw, 24px); border-left: 1px solid var(--line); }
 /* Both the crawl and the opened story are absolutely positioned, so nothing is
    left in flow to give this band height — take it from the rail instead. */
 .pastwork { flex: 1; min-width: 0; align-self: stretch; position: relative; display: flex;
