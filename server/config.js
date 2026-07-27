@@ -48,7 +48,7 @@ export const config = {
   },
 
   ui: {
-    projectRotateSec: num(process.env.UI_PROJECT_ROTATE_SEC, 15),
+    projectRotateSec: num(process.env.UI_PROJECT_ROTATE_SEC, 12),
     pollMs: num(process.env.UI_POLL_MS, 45 * 1000),
   },
 };

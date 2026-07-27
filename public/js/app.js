@@ -28,7 +28,7 @@ const FAKE_WORKSHOPS = [
 ];
 
 const state = {
-  config: { projectRotateSec: 15, pollMs: 45000, warnMinutes: [15, 5], locationName: 'Shields Library' },
+  config: { projectRotateSec: 12, pollMs: 45000, warnMinutes: [15, 5], locationName: 'Shields Library' },
   active: [],
   completed: [],
   stats: null,
@@ -301,12 +301,21 @@ function rowsPerPage() {
   const cap = boardCapacity();
   return state.rowsPref ? Math.min(cap, state.rowsPref) : cap;
 }
-// Scale the row type to whatever height each row actually got. Fewer rows per
-// page therefore means bigger text, with no second setting to keep in sync.
+// Scale the row type to whatever height each row actually got, then spend any
+// height left over on extra lines rather than more point size. Past roughly 24px
+// a row stops gaining legibility and starts running out of column instead: long
+// titles and partner lists just became ellipses. Letting those cells wrap to two
+// or three lines uses the room a short page actually has.
+const ROW_FONT_MAX = 24;
 function fitBoard(rowCount) {
   const board = $('#board');
   const h = board.clientHeight / Math.max(1, rowCount);
-  board.style.setProperty('--row-font', `${Math.max(11, Math.min(34, h * 0.42)).toFixed(1)}px`);
+  const font = Math.max(11, Math.min(ROW_FONT_MAX, h * 0.42));
+  // Lines of that type the row can hold, leaving a little breathing room.
+  const lines = Math.max(1, Math.min(3, Math.floor((h - 6) / (font * 1.34))));
+  board.style.setProperty('--row-font', `${font.toFixed(1)}px`);
+  board.style.setProperty('--row-lines', String(lines));
+  board.dataset.lines = String(lines);
 }
 const boardPageCount = () => boardLayout().pages;
 const BOARD_PAGE_MS = 12000;

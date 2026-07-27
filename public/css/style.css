@@ -454,24 +454,29 @@ body.show-cursor { cursor: default; }
 @keyframes row-in { from { opacity: 0; transform: translateY(16px); } }
 /* Every cell sizes off --row-font so one JS-computed number keeps the whole
    board dense enough to show all 17 projects and no smaller than it must be.
-   Rows are strictly single-line: a wrapped title would make one row taller than
-   the rest and push the last project off the bottom of the band. */
+   --row-lines is the second half of that: the number of lines the row can hold
+   at that size. At 17 rows it is 1 and every cell is a single ellipsised line;
+   on a short page it rises, and the cells that were truncating wrap instead. */
 .br-name { display: flex; align-items: center; gap: 0.6em; min-width: 0; font-size: var(--row-font); }
 /* Gold spine = externally funded. The one colour on the board, and it means money.
    Unfunded projects get a neutral tick so the column still aligns. */
-.br-swatch { width: 3px; height: 1.5em; border-radius: 2px; flex: none;
+.br-swatch { width: 3px; align-self: center; height: 1.5em; border-radius: 2px; flex: none;
   background: var(--tick); }
 .board-row.funded .br-swatch { background: var(--gold); width: 4px; }
 /* The name leads; everything beside it is metadata and steps down in weight and
    brightness rather than in size, so the columns still align on one baseline. */
-.br-title { font-weight: 700; font-size: 1em; line-height: 1.15; color: var(--ink-bright);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.br-title, .br-lead, .br-partner {
+  display: -webkit-box; -webkit-line-clamp: var(--row-lines, 1); -webkit-box-orient: vertical;
+  overflow: hidden; min-width: 0; overflow-wrap: anywhere; }
+.br-title { font-weight: 700; font-size: 1em; line-height: 1.25; color: var(--ink-bright); }
 .br-lead { font-size: calc(var(--row-font) * 0.88); color: var(--ink-dim); font-weight: 500;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.br-partner { font-size: calc(var(--row-font) * 0.88); color: var(--ink-dim); line-height: 1.15;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.br-focus { display: flex; gap: 0.45em; overflow: hidden; min-width: 0;
-  font-size: calc(var(--row-font) * 0.8); }
+  line-height: 1.25; }
+.br-partner { font-size: calc(var(--row-font) * 0.88); color: var(--ink-dim); line-height: 1.25; }
+/* Tags sit on one line while that is all the row has; given a second line they
+   wrap onto it instead of every tag shrinking to an ellipsis. */
+.br-focus { display: flex; gap: 0.45em; overflow: hidden; min-width: 0; flex-wrap: nowrap;
+  align-content: center; font-size: calc(var(--row-font) * 0.8); }
+.board:not([data-lines="1"]) .br-focus { flex-wrap: wrap; row-gap: 0.35em; }
 /* Tags ellipsise rather than being sliced mid-word by the column edge. */
 .br-tag { padding: 0.25em 0.7em; border-radius: 6px; font-size: 1em; font-weight: 600;
   background: var(--chip); border: 1px solid var(--line); color: var(--ink-dim);
