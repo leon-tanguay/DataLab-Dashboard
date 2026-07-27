@@ -420,10 +420,20 @@ function fitFeatured(el) {
   const desc = el.querySelector('.f-desc');
   if (!title || !el.clientHeight) return;
 
+  // Credits column: lead and partner are the story, the focus chips are a nicety
+  // the board row already carries. When all three won't fit the band, the chips
+  // go rather than being silently clipped by the column's overflow.
+  const side = el.querySelector('.f-side');
+  const chips = el.querySelector('.f-chips');
+  if (side && chips) {
+    chips.hidden = false;
+    if (side.scrollHeight > side.clientHeight) chips.hidden = true;
+  }
+
   // The headline only has to out-scale the board rows underneath it to read as
-  // featured — roughly twice their size does that. Past this it stops looking
-  // emphatic and just looks oversized.
-  const max = Math.max(22, Math.min(36, el.clientHeight * 0.3));
+  // featured — a little under twice their size does that. Past that it stops
+  // looking emphatic and starts looking oversized, which 36px did.
+  const max = Math.max(20, Math.min(28, el.clientHeight * 0.26));
   const min = Math.max(20, max * 0.62);
   const setDesc = (lines) => {
     if (!desc) return;
@@ -545,9 +555,10 @@ function ppOpenHTML(p) {
   if (p.lead) credits.push(`<span class="ppf-seg"><i>Lead</i>${esc(p.lead)}</span>`);
   if (partner) credits.push(`<span class="ppf-seg"><i>Partner</i>${esc(partner)}</span>`);
   const chip = p.domain ? `<span class="ppf-chip">${esc(titleCase(p.domain))}</span>` : '';
-  return `<span class="ppf-year">${p.year || ''}</span>` +
-    `<div class="ppf-body"><b class="ppf-name">${esc(prettyName(p.name))}</b></div>` +
-    `<div class="ppf-credits">${credits.join('')}${chip}</div>`;
+  // Year and title are one unit on the left; credits sit as a block on the right.
+  return `<div class="ppf-main"><span class="ppf-year">${p.year || ''}</span>` +
+    `<b class="ppf-name">${esc(prettyName(p.name))}</b></div>` +
+    (credits.length || chip ? `<div class="ppf-credits">${credits.join('')}${chip}</div>` : '');
 }
 // A continuously-scrolling list of every past project, driven from rAF rather
 // than a CSS animation so it has a real velocity — and so it can aim.
@@ -880,6 +891,10 @@ function setupResize() {
     t = setTimeout(() => {
       lastStatSig = ''; lastBoardSig = ''; lastPastSig = ''; lastWsSig = '';
       renderStats(); renderBoard(); renderRail();
+      // The headline is sized to the band it is in, so a new band height needs a
+      // new fit — without this the card keeps a size measured for the old screen
+      // and clips its own headline.
+      renderFeatured(true);
     }, 250);
   });
 }

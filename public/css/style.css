@@ -220,7 +220,7 @@ body.show-cursor { cursor: default; }
   /* header · featured · active board · past-projects rail.
      The board takes the lion's share: every active project is on screen at once,
      so its band has to carry ~17 rows without paging. */
-  grid-template-rows: auto minmax(0, 0.68fr) minmax(0, 2.32fr) minmax(0, 0.44fr);
+  grid-template-rows: auto minmax(0, 0.56fr) minmax(0, 2.32fr) minmax(0, 0.58fr);
   padding: var(--pad-top) var(--pad) var(--pad-bottom);
   gap: var(--gap);
   overflow: hidden;
@@ -525,11 +525,11 @@ body.show-cursor { cursor: default; }
 .pp-chip.next .pp-chip-name { color: var(--ink-bright); font-weight: 700; }
 .pp-chip.next .pp-chip-yr { color: var(--ink-dim); }
 
-/* The opened story overlays the reel: name left, credits pushed right (full width). */
-.pp-open { position: absolute; inset: 0; display: flex; align-items: center; gap: clamp(18px, 2vw, 40px);
-  padding-left: 0; background: var(--band); }
-.pp-open::before { content: ""; position: absolute; left: 0; top: 12%; bottom: 12%; width: 3px;
-  border-radius: 2px; background: var(--line); }
+/* The opened story: year + title as one unit on the left, credits as a block on
+   the right. The old accent rule sat at left:0 and, once the story lost its own
+   padding to align with the board, printed straight through the year. */
+.pp-open { position: absolute; inset: 0; display: flex; align-items: center;
+  gap: clamp(16px, 1.8vw, 34px); background: var(--band); }
 .pp-open.opening { animation: pp-open 560ms var(--ease-out) both; }
 .pp-open.closing { animation: pp-close 340ms var(--ease-in) both; }
 /* Credits trail in behind the wipe so the story assembles rather than appearing. */
@@ -537,19 +537,23 @@ body.show-cursor { cursor: default; }
 .pp-open.opening .ppf-credits > *:nth-child(1) { animation-delay: 260ms; }
 .pp-open.opening .ppf-credits > *:nth-child(2) { animation-delay: 330ms; }
 .pp-open.opening .ppf-credits > *:nth-child(3) { animation-delay: 400ms; }
-/* Sized to sit inside the rail band without the serif descenders touching its
-   edges — this strip is the shortest on screen, so it clips first. */
-.ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--ink-dim);
-  font-size: clamp(17px, 1.45vw, 27px); line-height: 1.2; font-variant-numeric: tabular-nums; }
-.ppf-body { min-width: 0; flex: 0 1 auto; }
-.ppf-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(13px, 1.15vw, 21px);
-  line-height: 1.25; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ppf-credits { flex: none; margin-left: auto; display: flex; align-items: center; gap: clamp(14px, 1.5vw, 28px); }
-.ppf-seg { font-size: clamp(10px, 0.85vw, 15px); color: var(--ink); font-weight: 600; white-space: nowrap;
-  line-height: 1.2; }
-.ppf-seg i { font-style: normal; display: block; text-transform: uppercase; letter-spacing: 0.14em;
-  font-size: 0.6em; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; }
-.ppf-chip { padding: 4px 11px; border-radius: 7px; font-size: clamp(10px, 0.8vw, 14px); font-weight: 600;
+
+.ppf-main { flex: 1; min-width: 0; display: flex; align-items: baseline;
+  gap: clamp(10px, 1.1vw, 20px); }
+/* The year is a date stamp, not a headline — it sits back so the title leads. */
+.ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--ink-faint);
+  font-size: clamp(14px, 1.2vw, 22px); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.ppf-name { min-width: 0; font-family: var(--font-serif); font-weight: 600;
+  font-size: clamp(16px, 1.45vw, 27px); line-height: 1.25; color: var(--ink-bright);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Label over value, baselines shared across the row, matching the credit block on
+   the featured card so the two read as the same object. */
+.ppf-credits { flex: none; display: flex; align-items: center; gap: clamp(16px, 1.7vw, 32px); }
+.ppf-seg { font-size: clamp(11px, 0.95vw, 17px); color: var(--ink); font-weight: 700;
+  white-space: nowrap; line-height: 1.2; }
+.ppf-seg i { font-style: normal; display: block; text-transform: uppercase; letter-spacing: 0.16em;
+  font-size: 0.62em; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; }
+.ppf-chip { padding: 5px 13px; border-radius: 8px; font-size: clamp(10px, 0.82vw, 15px); font-weight: 600;
   white-space: nowrap; color: var(--ink-dim);
   background: var(--chip); border: 1px solid var(--line); }
 @keyframes pp-open {
@@ -620,6 +624,11 @@ body.show-cursor { cursor: default; }
   border-bottom-right-radius: 5px; opacity: 0; transition: opacity 180ms ease; }
 #test-toggle:hover::after { opacity: 0.85; }
 .test-menu { position: fixed; right: 20px; bottom: 20px; z-index: 71; width: 300px; cursor: default;
+  /* This panel is always the dark utility surface, whatever the board's theme —
+     so it pins its own ink and accent rather than inheriting a light palette
+     that would leave it dark-on-dark. */
+  --ink: #eef4fb; --ink-dim: #9fb6cf; --ink-faint: #7d95b0; --chip: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.12); --gold: #ffc12b; --bg: #0c1f34; color: var(--ink);
   background: #0c1f34; border: 1px solid var(--line); border-radius: 14px; padding: 18px;
   box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.7); font-size: 14px; }
 .test-menu * { cursor: default; }
