@@ -116,6 +116,15 @@ Notes for the kiosk:
 - `--autoplay-policy=no-user-gesture-required` lets the closing chime play without
   anyone touching the machine.
 - Install `curl` (used by `kiosk.sh` to wait for the backend) if missing.
+- **If the top or edges look cut off**, the TV is overscanning. Add `?inset=32`
+  (any px value up to 120) to pad all four sides inside the visible frame.
+- **Motion is on by default**, deliberately: the stat crawl, the past-project reel
+  and the featured rotation are how the board cycles through its content, and a
+  display with the OS "reduce animations" setting switched on would otherwise
+  show a frozen board to people who can't opt in. `?motion=reduce` forces the
+  calm version (content still cycles, it just cuts instead of travelling);
+  `?motion=auto` follows the display's own setting.
+- Parameters combine: `?inset=32&motion=auto`.
 
 ### Older Node.js
 

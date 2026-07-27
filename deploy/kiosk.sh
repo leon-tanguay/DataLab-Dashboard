@@ -5,6 +5,8 @@
 set -e
 
 export DISPLAY="${DISPLAY:-:0}"
+# If the TV overscans (crops the edges), add ?inset=32 — or whatever the crop
+# measures — to pull the whole layout inside the visible frame.
 URL="${DASHBOARD_URL:-http://localhost:3000/}"
 
 # Wait until the dashboard server is serving.

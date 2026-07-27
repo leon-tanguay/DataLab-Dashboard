@@ -8,7 +8,6 @@
   </head>
   <body>
     <div class="bg-drift" aria-hidden="true"></div>
-    <div class="bg-grid" aria-hidden="true"></div>
 
     <div id="app" class="app">
       <!-- ============ Top bar (brand · cycling accomplishments · hours) ============ -->
@@ -51,13 +50,9 @@
 
       <!-- ============ Active Projects board (paged) ============ -->
       <section class="board-wrap" aria-label="Active projects">
-        <div class="tier-head">
-          <span class="tier-label">Active Projects</span>
-          <span id="board-count" class="tier-sub"></span>
-          <span id="board-pages" class="board-pages"></span>
-        </div>
         <div class="board-grid board-header">
-          <span>Project</span><span>Lead</span><span>Partner</span><span>Focus</span><span>Since</span>
+          <span class="board-h-main"><span class="tier-label">Active Projects</span><span id="board-count" class="tier-sub"></span><span id="board-pages" class="board-pages"></span></span>
+          <span>Lead</span><span>Partner</span><span>Focus</span><span>Since</span>
         </div>
         <div id="board" class="board"></div>
       </section>
@@ -90,6 +85,16 @@
           <button data-mode="closing">Closing soon</button>
           <button data-mode="closed">Closed</button>
         </div>
+      </div>
+      <div class="tm-group">
+        <div class="tm-label">Active projects per page</div>
+        <div class="tm-row" id="tm-rows">
+          <button data-rows="-1" aria-label="Fewer per page">&minus;</button>
+          <span id="tm-rows-val" class="tm-val">All</span>
+          <button data-rows="1" aria-label="More per page">+</button>
+          <button data-rows="all">All</button>
+        </div>
+        <div class="tm-note" id="tm-rows-note"></div>
       </div>
       <div class="tm-group">
         <div class="tm-label">Workshops</div>
