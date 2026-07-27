@@ -112,9 +112,24 @@ const initials = (name) => {
   return p.length ? (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase() : '';
 };
 // Project keys come from the source sheet as slugs ("arise", "2026_salcedo_water").
-// A donor board shouldn't show raw keys.
+// A donor board shouldn't show raw keys — but a name that is already written as a
+// title is left exactly as typed. Capitalising every word turned real titles into
+// "CoUL Document Library AI Index And Search" and "Bloom Teaching With Technology".
+// Words that stay lowercase mid-title; acronyms and CamelCase are left untouched.
+const SMALL_WORDS = /^(a|an|and|as|at|but|by|for|in|nor|of|on|or|the|to|via|with)$/i;
 const prettyName = (s) =>
-  String(s || '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  String(s || '')
+    .replace(/_+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((w, i) => {
+      // "NIH", "CoUL", "L&S", "LibBot" — already deliberate, leave them be.
+      if (w === w.toUpperCase() || /[A-Z]/.test(w.slice(1))) return w;
+      if (i > 0 && SMALL_WORDS.test(w)) return w.toLowerCase();
+      return w.replace(/^[a-z]|-[a-z]/g, (c) => c.toUpperCase());
+    })
+    .join(' ');
 
 // The partner field is free text in the source sheet and carries a fair amount of
 // operational residue — email addresses, "internal", pipe-delimited unit paths.
@@ -187,12 +202,8 @@ function statItems() {
   const items = [];
   if (s.active) items.push({ key: 'active', n: s.active, label: 'Active Projects' });
   if (s.delivered) items.push({ key: 'delivered', n: s.delivered, label: 'Projects Delivered' });
-  // Partners and departments say more together than apart: one is a headcount,
-  // the pair is a statement about reach. They stay two ordinary figures so the
-  // row keeps one baseline, and `joined` closes the gap between them so the
-  // labels read straight through as "…partners across 69 departments".
-  if (s.partners) items.push({ key: 'partners', n: s.partners, label: s.departments ? 'Faculty Partners Across' : 'Faculty Partners' });
-  if (s.departments) items.push({ key: 'departments', n: s.departments, label: 'Departments', joined: Boolean(s.partners) });
+  if (s.partners) items.push({ key: 'partners', n: s.partners, label: 'Faculty Partners' });
+  if (s.departments) items.push({ key: 'departments', n: s.departments, label: 'Departments' });
   return items;
 }
 // Reserve the final digit count so counting up can't reflow the sentence around
@@ -203,11 +214,11 @@ function renderStats() {
   const items = statItems();
   const el = $('#stats');
   if (!items.length) { el.innerHTML = ''; lastStatSig = ''; return; }
-  const sig = items.map((it) => it.key + (it.joined ? '+' : '')).join('|');
+  const sig = items.map((it) => it.key).join('|');
   if (sig !== lastStatSig) {
     lastStatSig = sig;
     el.innerHTML = items
-      .map((it, i) => `<div class="stat${it.joined ? ' joined' : ''}" data-k="${i}">` +
+      .map((it, i) => `<div class="stat" data-k="${i}">` +
         `${numSpan(it.n)}<span class="stat-label">${esc(it.label)}</span></div>`)
       .join('');
   }
@@ -216,18 +227,33 @@ function renderStats() {
 }
 
 /* ---------------- Tier 1: Active Projects board (paged) ---------------- */
-// Grouped by research domain, newest first inside each group. Clustering the
-// fields is what makes the board scannable — it shows the breadth structurally,
-// which is the job the seven-colour palette was failing to do. Projects with no
-// domain sort last so the gaps sit at the bottom rather than splitting a group.
+// What the Focus column shows: themes first, then approaches, falling back to the
+// research domain. Sorting and rendering both read this, so the column is sorted
+// by the text actually in it — keying the sort off the underlying `domain` field
+// instead put "Data Visualization" at the bottom because its hidden domain was
+// "other", which is invisible and therefore looks arbitrary.
+function focusTags(p) {
+  const tags = [...(p.themes || []), ...(p.approaches || [])].slice(0, 2);
+  if (tags.length) return tags;
+  return p.domain ? [titleCase(p.domain)] : [];
+}
+const focusKey = (p) => (focusTags(p)[0] || '').trim().toLowerCase();
+
+// Alphabetical by focus, then by name inside each focus. A literal "Other" and
+// anything with no focus at all sink to the bottom — a bucket that says nothing
+// shouldn't sit in the middle of the alphabet.
 function sortedActive() {
-  const key = (p) => (p.domain || '').trim().toLowerCase();
-  return [...state.active].sort((a, b) => {
-    const ka = key(a);
-    const kb = key(b);
-    if (ka !== kb) return !ka - !kb || ka.localeCompare(kb); // blanks last
-    return (b.startYear || 0) - (a.startYear || 0) || (a.name || '').localeCompare(b.name || '');
-  });
+  const rank = (p) => {
+    const k = focusKey(p);
+    if (!k) return 2;
+    return k === 'other' ? 1 : 0;
+  };
+  return [...state.active].sort(
+    (a, b) =>
+      rank(a) - rank(b) ||
+      focusKey(a).localeCompare(focusKey(b)) ||
+      (a.name || '').localeCompare(b.name || '')
+  );
 }
 // The board shows the whole portfolio at once by default — a donor walking past
 // should see every active project without waiting for a page turn. Rows compress
@@ -248,6 +274,24 @@ function loadRowsPref() {
 function saveRowsPref(v) {
   try { v ? localStorage.setItem(ROWS_KEY, String(v)) : localStorage.removeItem(ROWS_KEY); } catch {}
 }
+
+/* ---------------- theme ---------------- */
+// Each theme restates the colour tokens in CSS; nothing here knows about colours.
+const THEMES = ['midnight', 'aggie', 'graphite', 'arboretum', 'daylight'];
+const THEME_KEY = 'datalab.theme';
+function applyTheme(name) {
+  const t = THEMES.includes(name) ? name : THEMES[0];
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(THEME_KEY, t); } catch {}
+  return t;
+}
+function loadTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch {}
+  // ?theme= wins on first load so a kiosk can be pinned without touching the menu.
+  const param = new URLSearchParams(location.search).get('theme');
+  return applyTheme(param || saved || THEMES[0]);
+}
 // How many rows the band can physically hold, before the staff cap is applied.
 function boardCapacity() {
   const h = $('#board').clientHeight || 360;
@@ -266,21 +310,16 @@ function fitBoard(rowCount) {
 }
 const boardPageCount = () => boardLayout().pages;
 const BOARD_PAGE_MS = 12000;
-function boardRow(p, i, all) {
-  // A heavier rule where the domain changes, so the grouping is visible even
-  // when neighbouring rows show themes rather than the domain name itself.
-  const prev = all && all[i - 1];
-  const groupStart = i > 0 && prev && (prev.domain || '') !== (p.domain || '');
+function boardRow(p, i) {
   // The department fallback needs the same cleanup as the partner field — it
   // carries unit paths like "CAES | Plant Sciences" straight from the sheet.
   const partner = realName(p.facultyPartner) || realName(p.department);
   // Themes (the research area) lead, approaches (the method) follow. Only about a
   // third of projects carry either, so fall back to the research domain — that
   // keeps the column meaningful instead of a colonnade of em-dashes.
-  let tags = [...(p.themes || []), ...(p.approaches || [])].slice(0, 2);
-  if (!tags.length && p.domain) tags = [titleCase(p.domain)];
+  const tags = focusTags(p);
   const recent = p.startYear && p.startYear >= new Date().getFullYear() - 1;
-  return `<div class="board-row${p.funded ? ' funded' : ''}${groupStart ? ' group-start' : ''}" style="--i:${i}">
+  return `<div class="board-row${p.funded ? ' funded' : ''}" style="--i:${i}">
     <div class="br-name"><span class="br-swatch"></span><span class="br-title">${esc(prettyName(p.name || p.title))}</span></div>
     <div class="br-lead">${p.lead ? esc(p.lead) : '<span class="br-none">—</span>'}</div>
     <div class="br-partner">${partner ? esc(partner) : '<span class="br-none">—</span>'}</div>
@@ -302,7 +341,7 @@ function renderBoardPage() {
   const { pages, per } = boardLayout();
   state.boardPage = ((state.boardPage % pages) + pages) % pages;
   const rows = list.slice(state.boardPage * per, state.boardPage * per + per);
-  $('#board').innerHTML = rows.map((p, i) => boardRow(p, i, rows)).join('');
+  $('#board').innerHTML = rows.map(boardRow).join('');
   fitBoard(rows.length);
   // Rebuilt each turn so the active pill's fill animation restarts in step with
   // the dwell timer — the countdown always matches the real time remaining.
@@ -349,32 +388,82 @@ function buildFeatured(p) {
   const headline = p.longTitle || p.blurb || p.name;
   const desc = p.blurb && p.blurb !== headline ? p.blurb : '';
   const faculty = realName(p.facultyPartner);
-  const chips = [
-    ...(p.themes || []).slice(0, 2).map((t) => `<span class="f-chip">${esc(t)}</span>`),
-    ...(p.approaches || []).slice(0, 2).map((a) => `<span class="f-chip">${esc(a)}</span>`),
+  // Two at most. Four chips wrapped past the bottom of the side column on a
+  // 1920×1080 panel; the third and fourth were never the point anyway.
+  const chips = [...(p.themes || []), ...(p.approaches || [])]
+    .slice(0, 2)
+    .map((t) => `<span class="f-chip">${esc(t)}</span>`)
+    .join('');
+  // Credits stack into a side column instead of running along the bottom. That
+  // gives the headline the full height of the band to be genuinely large in, and
+  // puts something in the right half, which was reading as dead space.
+  const side = [
+    p.lead ? `<div class="f-cred"><small>Led by</small><div class="f-lead"><span class="f-avatar">${esc(initials(p.lead))}</span><b>${esc(p.lead)}</b></div></div>` : '',
+    faculty ? `<div class="f-cred"><small>Faculty Partner</small><b>${esc(faculty)}</b></div>` : '',
+    chips ? `<div class="f-chips">${chips}</div>` : '',
   ].join('');
   return `
-    <div class="f-eyebrow">${esc(prettyName(p.name || 'DataLab'))}${p.domain ? `<span class="f-domain">${esc(p.domain)}</span>` : ''}${p.funded ? `<span class="f-fund">Externally Funded</span>` : ''}</div>
-    <div class="f-title">${esc(headline)}</div>
-    ${desc ? `<div class="f-desc">${esc(desc)}</div>` : ''}
-    <div class="f-foot">
-      ${p.lead ? `<div class="f-lead"><div class="f-avatar">${esc(initials(p.lead))}</div>
-        <div class="f-lead-text"><small>Led by</small><b>${esc(p.lead)}</b></div></div>` : ''}
-      ${faculty ? `<div class="f-partner">in partnership with <b>${esc(faculty)}</b></div>` : ''}
-      ${chips ? `<div class="f-chips-inline">${chips}</div>` : ''}
-    </div>`;
+    <div class="f-main">
+      <div class="f-eyebrow">${esc(prettyName(p.name || 'DataLab'))}${p.domain ? `<span class="f-domain">${esc(p.domain)}</span>` : ''}${p.funded ? `<span class="f-fund">Externally Funded</span>` : ''}</div>
+      <div class="f-title">${esc(headline)}</div>
+      ${desc ? `<div class="f-desc">${esc(desc)}</div>` : ''}
+    </div>
+    ${side ? `<div class="f-side">${side}</div>` : ''}`;
 }
-// Project blurbs vary wildly in length and nobody is watching the TV to catch a
-// half-cut line. Give back lines until the card actually fits: two, then one,
-// then drop the blurb and let the headline carry it.
+// Headlines here range from six words to forty, and blurbs from nothing to a
+// paragraph. At one fixed size the short ones leave the band half empty and the
+// long ones clip — so the headline is sized to the content instead: grow it until
+// it fills the band, and only if the smallest size still overflows give back
+// blurb lines. The featured project ends up filling its space whatever it says.
 function fitFeatured(el) {
+  const title = el.querySelector('.f-title');
   const desc = el.querySelector('.f-desc');
-  if (!desc) return;
-  for (const lines of ['2', '1']) {
-    desc.style.webkitLineClamp = lines;
-    if (el.scrollHeight <= el.clientHeight) return;
+  if (!title || !el.clientHeight) return;
+
+  // The headline only has to out-scale the board rows underneath it to read as
+  // featured — roughly twice their size does that. Past this it stops looking
+  // emphatic and just looks oversized.
+  const max = Math.max(22, Math.min(36, el.clientHeight * 0.3));
+  const min = Math.max(20, max * 0.62);
+  const setDesc = (lines) => {
+    if (!desc) return;
+    desc.hidden = lines === 'off';
+    if (lines !== 'off') desc.style.webkitLineClamp = lines;
+  };
+  // Both tests matter. -webkit-line-clamp caps the headline's own box, so a title
+  // too big for its line budget is silently cut *inside* an element the card
+  // still reports as fitting — checking the card alone drove every headline to
+  // the ceiling with its last words chopped off.
+  const fits = (px) => {
+    el.style.setProperty('--f-title-size', `${px}px`);
+    return el.scrollHeight <= el.clientHeight && title.scrollHeight <= title.clientHeight + 1;
+  };
+
+  // The blurb yields before the headline does. Shrinking the title to protect two
+  // lines of blurb is backwards — it drove a long headline down to 16px, smaller
+  // than the board rows below it, which is the opposite of "featured".
+  setDesc('2');
+  if (fits(max)) return;
+  setDesc('1');
+  if (fits(max)) return;
+
+  // Still too tall at full size: give up headline size down to the floor, keeping
+  // a single line of blurb.
+  let lo = min;
+  let hi = max;
+  for (let i = 0; i < 10; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid; else hi = mid;
   }
-  desc.hidden = true;
+  if (fits(lo)) return;
+  // Only now does the blurb go entirely, and the headline gets its size back.
+  setDesc('off');
+  if (fits(max)) return;
+  for (let i = 0, a = min, b = max; i < 10; i++) {
+    const mid = (a + b) / 2;
+    if (fits(mid)) a = mid; else b = mid;
+    if (i === 9) fits(a);
+  }
 }
 function renderFeatured(immediate) {
   const el = $('#featured');
@@ -447,7 +536,7 @@ function pastCardHTML(p) {
 }
 const titleCase = (s) => (s || '').replace(/\b\w/g, (c) => c.toUpperCase());
 function pastChipHTML(p, idx) {
-  return `<span class="pp-chip" data-i="${idx}"><span class="pp-chip-sw"></span>` +
+  return `<span class="pp-chip" data-i="${idx}">` +
     `<span class="pp-chip-name">${esc(prettyName(p.name))}</span><span class="pp-chip-yr">${p.year || ''}</span></span>`;
 }
 function ppOpenHTML(p) {
@@ -727,6 +816,16 @@ function setupTestMenu() {
   });
   $('#tm-close').addEventListener('click', () => { menu.hidden = true; });
 
+  $('#tm-theme').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    setActive(e.currentTarget, 'theme', applyTheme(b.dataset.theme));
+    // Row and headline sizes are measured, and the themes shift metrics slightly.
+    lastBoardSig = '';
+    renderBoard();
+    renderFeatured(true);
+  });
+  setActive($('#tm-theme'), 'theme', document.documentElement.dataset.theme);
+
   $('#tm-rows').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.rows === 'all') return applyRowsPref(0);
@@ -787,6 +886,7 @@ function setupResize() {
 
 async function boot() {
   primeAudio();
+  loadTheme();                     // before first paint, so nothing flashes
   state.rowsPref = loadRowsPref(); // before the first board render
   setupCursor();
   setupTestMenu();

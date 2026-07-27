@@ -22,20 +22,26 @@
 @font-face { font-family: "Newsreader"; font-weight: 600; font-display: swap;
   src: url("../assets/fonts/newsreader-600.woff2") format("woff2"); }
 
-:root {
+/* ---- Colour system -------------------------------------------------------
+   Every hue carries exactly one meaning, decodable without a legend:
+     accent → external funding (money)
+     bright → recent / primary (project names, headline figures)
+     green  → library open      (status dot only)
+     red    → alert             (closing banner, CLOSED takeover)
+   Everything else is the neutral ramp. Research domain used to be seven
+   arbitrary hues on every row; nobody walking past could decode it, so it is
+   text now and breadth is carried by the headline figures instead.
+
+   Themes restate only these tokens — every rule downstream reads them, so a
+   theme never has to know about a component. `--field` is the page backdrop,
+   `--chip`/`--chip-strong`/`--tick` are the neutral fills that have to invert
+   for a light theme, and `--gold` is the accent whatever colour it happens to be.
+   -------------------------------------------------------------------------- */
+:root, :root[data-theme="midnight"] {
   --bg: #050f1b;
-  --panel: rgba(255, 255, 255, 0.03);
-  --panel-strong: rgba(12, 30, 50, 0.55);
+  --field: linear-gradient(180deg, #0b2237 0%, #071628 52%, #050f1b 100%);
   --band: #0c1f34;
-  /* ---- Colour system -------------------------------------------------
-     Every hue carries exactly one meaning, decodable without a legend:
-       gold   → external funding (money)
-       bright → recent / primary (this year's work, project names, headline figures)
-       green  → library open      (status dot only)
-       red    → alert             (closing banner, CLOSED takeover)
-     Everything else is the neutral ramp. Research domain used to be seven
-     arbitrary hues on every row; nobody walking past could decode it, so it is
-     text now and breadth is carried by the "Research Areas" figure instead. */
+  --panel: rgba(255, 255, 255, 0.03);
   --gold: #ffc12b;
   --gold-soft: #ffd873;
   --green: #46d08a;
@@ -48,16 +54,123 @@
   --line: rgba(255, 255, 255, 0.09);
   --line-soft: rgba(255, 255, 255, 0.05);
   --zebra: rgba(255, 255, 255, 0.018);
+  --chip: rgba(255, 255, 255, 0.05);
+  --chip-strong: rgba(255, 255, 255, 0.09);
+  --tick: rgba(255, 255, 255, 0.13);
+  --faintest: rgba(255, 255, 255, 0.14);
+}
 
+/* UC Davis official: Aggie Blue #022851 with Aggie Gold #FFBF00. */
+:root[data-theme="aggie"] {
+  --bg: #01192f;
+  --field: linear-gradient(180deg, #05365f 0%, #022851 55%, #01192f 100%);
+  --band: #032f5c;
+  --panel: rgba(255, 255, 255, 0.04);
+  --gold: #ffbf00;
+  --gold-soft: #ffd75e;
+  --green: #4fd08a;
+  --ink-bright: #ffffff;
+  --ink: #eaf2fb;
+  --ink-dim: #a8c2dd;
+  --ink-faint: #6d8db0;
+  --danger: #ff6161;
+  --danger-soft: #ff9270;
+  --line: rgba(255, 255, 255, 0.11);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --zebra: rgba(255, 255, 255, 0.022);
+  --chip: rgba(255, 255, 255, 0.06);
+  --chip-strong: rgba(255, 255, 255, 0.1);
+  --tick: rgba(255, 255, 255, 0.15);
+  --faintest: rgba(255, 255, 255, 0.15);
+}
+
+/* Space grey. The surfaces and the whole neutral ramp are colourless; the only
+   hues left are the ones that carry meaning — amber for funding, green for open,
+   red for alerts — which is the colour system at its most literal. */
+:root[data-theme="graphite"] {
+  --bg: #111113;
+  --field: linear-gradient(180deg, #232326 0%, #19191c 52%, #111113 100%);
+  --band: #1d1d20;
+  --panel: rgba(255, 255, 255, 0.035);
+  --gold: #f0b429;
+  --gold-soft: #ffd166;
+  --green: #46d08a;
+  --ink-bright: #fafafa;
+  --ink: #ededef;
+  --ink-dim: #a1a1a8;
+  --ink-faint: #6e6e76;
+  --danger: #ff6b6b;
+  --danger-soft: #ff9b7a;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.055);
+  --zebra: rgba(255, 255, 255, 0.022);
+  --chip: rgba(255, 255, 255, 0.055);
+  --chip-strong: rgba(255, 255, 255, 0.1);
+  --tick: rgba(255, 255, 255, 0.15);
+  --faintest: rgba(255, 255, 255, 0.16);
+}
+
+/* UC Davis Arboretum — deep olive and oak. */
+:root[data-theme="arboretum"] {
+  --bg: #0d1710;
+  --field: linear-gradient(180deg, #16281a 0%, #101d13 52%, #0d1710 100%);
+  --band: #16281b;
+  --panel: rgba(255, 255, 255, 0.035);
+  --gold: #d8b143;
+  --gold-soft: #ecd07f;
+  --green: #64c98a;
+  --ink-bright: #f6faf5;
+  --ink: #e7efe6;
+  --ink-dim: #a5bda6;
+  --ink-faint: #6a8570;
+  --danger: #ff6b6b;
+  --danger-soft: #ff9b7a;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.055);
+  --zebra: rgba(255, 255, 255, 0.02);
+  --chip: rgba(255, 255, 255, 0.05);
+  --chip-strong: rgba(255, 255, 255, 0.09);
+  --tick: rgba(255, 255, 255, 0.14);
+  --faintest: rgba(255, 255, 255, 0.15);
+}
+
+/* Off-white. Neutral fills flip to blacks; the ramp runs dark-on-light. */
+:root[data-theme="daylight"] {
+  --bg: #e6e4dd;
+  --field: linear-gradient(180deg, #efede6 0%, #e9e7e0 52%, #e1dfd7 100%);
+  --band: #f2f0ea;
+  --panel: rgba(0, 0, 0, 0.02);
+  --gold: #a9760a;
+  --gold-soft: #c08f1c;
+  --green: #1f8a52;
+  --ink-bright: #14171c;
+  --ink: #23282f;
+  --ink-dim: #5b646f;
+  --ink-faint: #8b939d;
+  --danger: #c0362f;
+  --danger-soft: #d05a34;
+  --line: rgba(0, 0, 0, 0.15);
+  --line-soft: rgba(0, 0, 0, 0.08);
+  --zebra: rgba(0, 0, 0, 0.025);
+  --chip: rgba(0, 0, 0, 0.04);
+  --chip-strong: rgba(0, 0, 0, 0.07);
+  --tick: rgba(0, 0, 0, 0.16);
+  --faintest: rgba(0, 0, 0, 0.18);
+}
+
+:root {
   --radius: 14px;
   /* Extra margin a TV needs when it overscans; set from ?inset= on the kiosk. */
   --safe-inset: 0px;
   /* Sides are deliberately tighter than the top: horizontal room is what the
      board's columns need, while the top edge is what a TV crops first. */
-  --pad: calc(clamp(10px, 0.95vw, 19px) + var(--safe-inset));
-  --pad-top: calc(clamp(14px, 1.25vw, 25px) + var(--safe-inset));
-  --pad-bottom: calc(clamp(10px, 0.95vw, 19px) + var(--safe-inset));
-  --gap: clamp(5px, 0.6vw, 10px);
+  --pad: calc(clamp(16px, 1.55vw, 31px) + var(--safe-inset));
+  --pad-top: calc(clamp(10px, 0.9vw, 18px) + var(--safe-inset));
+  --pad-bottom: calc(clamp(8px, 0.8vw, 16px) + var(--safe-inset));
+  --gap: clamp(4px, 0.45vw, 8px);
+  /* One inset for every band, so the featured headline, the project names and the
+     past-projects strip all start on the same vertical line down the screen. */
+  --section-pad: clamp(12px, 1.2vw, 22px);
 
   /* Motion: one vocabulary. Entrances ease out, exits ease in, nothing loops
      for decoration. Long-form durations are computed in JS from real distance
@@ -94,8 +207,8 @@ body.show-cursor { cursor: default; }
    fades toward the edges. No "breathing" multi-glow gradient. */
 .bg-drift {
   position: fixed; inset: 0; z-index: 0;
-  /* Subtle top-to-bottom depth only — no radial "spotlight". */
-  background: linear-gradient(180deg, #0b2237 0%, #071628 52%, #050f1b 100%);
+  /* Subtle top-to-bottom depth only — no radial "spotlight". Set per theme. */
+  background: var(--field);
 }
 
 /* ---------------- Layout ---------------- */
@@ -107,7 +220,7 @@ body.show-cursor { cursor: default; }
   /* header · featured · active board · past-projects rail.
      The board takes the lion's share: every active project is on screen at once,
      so its band has to carry ~17 rows without paging. */
-  grid-template-rows: auto minmax(0, 0.8fr) minmax(0, 2.3fr) minmax(0, 0.3fr);
+  grid-template-rows: auto minmax(0, 0.68fr) minmax(0, 2.32fr) minmax(0, 0.44fr);
   padding: var(--pad-top) var(--pad) var(--pad-bottom);
   gap: var(--gap);
   overflow: hidden;
@@ -125,16 +238,19 @@ body.show-cursor { cursor: default; }
 
 /* ---------------- Top bar ---------------- */
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: clamp(12px, 1.1vw, 22px);
-  padding-bottom: clamp(6px, 0.7vw, 12px); border-bottom: 1px solid var(--line-soft); }
+  padding-bottom: clamp(4px, 0.45vw, 8px); border-bottom: 1px solid var(--line-soft); }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand-logo { height: clamp(32px, 2.7vw, 48px); width: auto; }
-.brand-text { display: flex; flex-direction: column; line-height: 1; }
-.brand-mark { font-weight: 700; font-size: clamp(20px, 1.9vw, 34px); letter-spacing: -0.02em; }
+/* The brand block and each figure share one pattern — a large mark over a small
+   uppercase caption — so they sit on the same two baselines across the bar. */
+.brand-text { display: flex; flex-direction: column; justify-content: center; gap: 4px; line-height: 1; }
+.brand-mark { font-weight: 700; font-size: clamp(19px, 1.85vw, 34px); letter-spacing: -0.02em;
+  color: var(--ink-bright); line-height: 1; }
 .brand-accent { color: inherit; }
-.brand-sub { color: var(--ink-dim); font-weight: 600; letter-spacing: 0.16em;
-  text-transform: uppercase; font-size: clamp(8px, 0.66vw, 12px); margin-top: 4px; }
+.brand-sub { color: var(--ink-faint); font-weight: 700; letter-spacing: 0.17em;
+  text-transform: uppercase; font-size: clamp(8px, 0.68vw, 12px); }
 
-.topbar-right { display: flex; align-items: center; gap: clamp(14px, 1.4vw, 27px); min-width: 0; }
+.topbar-right { display: flex; align-items: center; gap: clamp(10px, 1vw, 19px); min-width: 0; }
 .hours-block { display: flex; align-items: center; gap: 10px; min-width: 0; }
 /* Status dot: an expanding ring (transform/opacity only) reads as "live" from
    across the room without the neon-glow blur a box-shadow halo would give. */
@@ -150,17 +266,20 @@ body.show-cursor { cursor: default; }
 @keyframes ping { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.6); opacity: 0; } }
 /* Back in the top bar, but sized as utility text — present for the students who
    need it without competing with the figures beside it. */
-.hours-text { font-size: clamp(11px, 0.92vw, 16px); font-weight: 600; color: var(--ink-faint);
+.hours-text { font-size: clamp(11px, 0.95vw, 17px); font-weight: 600; color: var(--ink-dim);
   white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .hours-block[data-status="open"] .hours-text { color: var(--ink-dim); }
 .hours-block[data-status="closing"] .hours-text { color: var(--danger-soft); }
 .hours-block[data-status="closed"] .hours-text { color: var(--danger); }
 .hours-text b { font-weight: 700; color: var(--ink); }
 
-.clock { text-align: right; line-height: 1.1; }
-.clock-time { font-weight: 700; font-size: clamp(16px, 1.35vw, 25px); font-variant-numeric: tabular-nums;
-  color: var(--ink); }
-.clock-date { color: var(--ink-faint); font-size: clamp(9px, 0.7vw, 12px); font-weight: 500; letter-spacing: 0.02em; }
+/* Same mark-over-caption pattern as the brand and the figures. */
+.clock { display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  text-align: right; line-height: 1; }
+.clock-time { font-weight: 700; font-size: clamp(19px, 1.85vw, 34px); font-variant-numeric: tabular-nums;
+  color: var(--ink-bright); line-height: 1; }
+.clock-date { color: var(--ink-faint); font-size: clamp(10px, 0.82vw, 14px); font-weight: 600;
+  letter-spacing: 0.06em; }
 
 /* ---------------- Headline figures (static) ----------------
    Four numbers, always on screen, sized to be read across a room. Big bright
@@ -172,22 +291,22 @@ body.show-cursor { cursor: default; }
    figures — a clipped "DEPARTMENT" is worse than a clipped closing time.
    Spacing lives entirely in each figure's padding-left (no flex gap) so a single
    figure can tighten against the one before it. */
-.stats { display: flex; align-items: stretch; margin-right: auto; flex: none; }
-.stat { display: flex; flex-direction: column; justify-content: center; gap: 3px;
-  padding-left: clamp(22px, 2.5vw, 50px); border-left: 1px solid var(--line-soft); }
-.stat:first-child { border-left: none; padding-left: 0; }
-/* Continues the previous figure's sentence: normal word spacing, no divider, so
-   "…Faculty Partners Across" runs straight into "69 Departments". */
-.stat.joined { padding-left: clamp(4px, 0.45vw, 8px); border-left: none; }
-.stat-num { font-size: clamp(20px, 2.05vw, 39px); font-weight: 800; letter-spacing: -0.02em;
+.stats { display: flex; align-items: stretch; margin-right: auto; flex: none;
+  margin-left: clamp(16px, 1.8vw, 36px); }
+.stat { display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  padding-left: clamp(20px, 2.2vw, 44px); }
+.stat:first-child { padding-left: 0; }
+/* Same size and weight as .brand-mark, same caption as .brand-sub — the whole bar
+   reads as one row of mark-over-caption blocks. */
+.stat-num { font-size: clamp(19px, 1.85vw, 34px); font-weight: 800; letter-spacing: -0.02em;
   color: var(--ink-bright); font-variant-numeric: tabular-nums; line-height: 1;
-  display: inline-block; text-align: center; }
+  display: inline-block; }
 .stat-label { font-size: clamp(8px, 0.68vw, 12px); text-transform: uppercase; letter-spacing: 0.17em;
   color: var(--ink-faint); font-weight: 700; white-space: nowrap; }
 
 
 /* ---------------- Tier heads ---------------- */
-.tier-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 5px; }
+.tier-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 3px; }
 .tier-label { text-transform: uppercase; letter-spacing: 0.2em; font-size: clamp(9px, 0.76vw, 13px);
   font-weight: 700; color: var(--gold); white-space: nowrap; position: relative; padding-left: 14px; }
 .tier-label::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
@@ -197,10 +316,10 @@ body.show-cursor { cursor: default; }
 /* Page indicator doubles as the countdown to the next flip: the active pill fills
    over exactly the dwell time set in JS, so the board never changes unannounced. */
 .board-pages { margin-left: auto; display: flex; gap: 6px; align-items: center; }
-.board-pages .pg { width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.18);
+.board-pages .pg { width: 6px; height: 6px; border-radius: 999px; background: var(--tick);
   transition: width var(--dur-slow) var(--ease-out), background-color var(--dur) ease; }
 .board-pages .pg.on { width: 26px; position: relative; overflow: hidden;
-  background: rgba(255, 255, 255, 0.14); }
+  background: var(--chip-strong); }
 .board-pages .pg.on::after { content: ""; position: absolute; inset: 0; background: var(--gold);
   transform-origin: left; animation: fill var(--page-dur, 12s) linear forwards; }
 @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -211,11 +330,16 @@ body.show-cursor { cursor: default; }
   flex: 1; min-height: 0; isolation: isolate;
   /* Centred, not top-and-bottom pinned: projects without a blurb would otherwise
      leave a dead band between the headline and the credit line. */
-  display: flex; flex-direction: column; justify-content: center;
-  gap: clamp(6px, 0.7vw, 12px);
-  /* No panel, no border: a frame around a headline is a box doing work that
-     scale and space already do. The rule on the left is the only chrome. */
-  padding: clamp(8px, 0.9vw, 16px) 0 clamp(8px, 0.9vw, 16px) clamp(18px, 1.9vw, 34px);
+  /* Two columns: headline left, credits right. Stacked rows in a 1900px-wide
+     band left the right half empty and capped how large the headline could be. */
+  display: flex; flex-direction: row; align-items: stretch;
+  gap: clamp(20px, 2.2vw, 44px);
+  /* Panel treatment, matching the past-projects rail: the raised surface is what
+     marks this band as the featured slot rather than more page. */
+  background: var(--band); border: 1px solid var(--line); border-radius: var(--radius);
+  /* Minus the 1px border, so text inside this panel lands on the same vertical
+     line as the board rows below, which have no border to offset them. */
+  padding: clamp(6px, 0.7vw, 12px) calc(var(--section-pad) - 1px);
   position: relative; overflow: hidden;
   transition: opacity var(--dur-slow) var(--ease-in), transform var(--dur-slow) var(--ease-in);
 }
@@ -233,55 +357,73 @@ body.show-cursor { cursor: default; }
 .featured.enter::after { animation: fill-y var(--rotate-dur, 15s) linear forwards; }
 @keyframes fill-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
-/* Content lands line by line rather than as one block. */
-.featured.enter > * { animation: line-in 560ms var(--ease-out) backwards; }
-.featured.enter > *:nth-child(1) { animation-delay: 60ms; }
-.featured.enter > *:nth-child(2) { animation-delay: 130ms; }
-.featured.enter > *:nth-child(3) { animation-delay: 200ms; }
-.featured.enter > *:nth-child(4) { animation-delay: 270ms; }
+/* Content lands line by line rather than as one block — headline column first,
+   credits trailing in behind it. */
+.featured.enter .f-main > *, .featured.enter .f-side > * {
+  animation: line-in 560ms var(--ease-out) backwards; }
+.featured.enter .f-main > *:nth-child(1) { animation-delay: 60ms; }
+.featured.enter .f-main > *:nth-child(2) { animation-delay: 130ms; }
+.featured.enter .f-main > *:nth-child(3) { animation-delay: 200ms; }
+.featured.enter .f-side > *:nth-child(1) { animation-delay: 240ms; }
+.featured.enter .f-side > *:nth-child(2) { animation-delay: 300ms; }
+.featured.enter .f-side > *:nth-child(3) { animation-delay: 360ms; }
 @keyframes line-in { from { opacity: 0; transform: translateY(14px); } }
+
+/* Headline column takes whatever the credits do not need. */
+.f-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(5px, 0.6vw, 11px); }
+/* overflow:hidden is the backstop — a long partner name or a wide chip must clip
+   inside this column rather than push the card past the band. */
+/* Sized to fit the band without help: three stacked credits at the old 18px gap
+   needed 158px in a 142px column, so the tail was being clipped. overflow:hidden
+   stays as a backstop, but the column is now small enough not to need it. */
+.f-side { flex: 0 0 auto; max-width: 28%; min-width: 0; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(5px, 0.6vw, 11px); padding-left: clamp(20px, 2.2vw, 44px);
+  border-left: 1px solid var(--line-soft); }
+.f-cred { min-width: 0; }
+.f-cred small { display: block; color: var(--ink-faint); text-transform: uppercase;
+  letter-spacing: 0.16em; font-size: clamp(8px, 0.62vw, 11px); font-weight: 700; margin-bottom: 3px; }
+.f-cred b { display: block; font-size: clamp(13px, 1.1vw, 20px); font-weight: 700; color: var(--ink);
+  line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-chips { display: flex; flex-wrap: wrap; gap: 7px; min-width: 0; }
+.f-chips .f-chip { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .f-eyebrow { color: var(--ink-dim); font-weight: 600; font-size: clamp(10px, 0.85vw, 15px);
   letter-spacing: 0.03em; display: flex; gap: 10px; align-items: center; }
 .f-eyebrow .f-domain { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7em;
   color: var(--ink-dim); padding: 3px 11px; border: 1px solid var(--line); border-radius: 999px; }
 /* Gold again, and only here: this is the funding signal. */
 .f-eyebrow .f-fund { text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.66em; font-weight: 700;
-  color: var(--gold); padding: 3px 11px; border: 1px solid rgba(255, 193, 43, 0.4); border-radius: 999px; }
-.f-title { font-family: var(--font-serif); font-weight: 600; line-height: 1.12;
-  font-size: clamp(16px, 1.48vw, 28px); letter-spacing: 0; color: var(--ink-bright);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  color: var(--gold); padding: 3px 11px; border: 1px solid color-mix(in srgb, var(--gold) 42%, transparent); border-radius: 999px; }
+/* The one thing on screen allowed to be big. It is the featured project; if it
+   does not out-scale the board rows underneath it, nothing marks it as featured. */
+/* Size is set by fitFeatured(), which grows it to fill the band. The clamp is the
+   pre-fit fallback only. */
+.f-title { font-family: var(--font-serif); font-weight: 600; line-height: 1.1;
+  font-size: var(--f-title-size, clamp(21px, 2.15vw, 41px));
+  letter-spacing: -0.005em; color: var(--ink-bright);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 /* No measure cap: this is two clamped lines on a very wide screen, not a column
    of body text, so the reading-measure rule works against it — capping the width
    just forced longer blurbs to clip that much sooner. */
 .f-desc { color: var(--ink-dim); font-size: clamp(11px, 0.9vw, 16px); line-height: 1.4;
   padding-right: clamp(12px, 1.5vw, 28px);
   min-height: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-/* The credit line is a footer, not a second headline — keeping it compact is what
-   buys the blurb its two lines in a band this short. */
-.f-foot { display: flex; align-items: center; gap: clamp(12px, 1.4vw, 24px); flex-wrap: nowrap;
-  margin-top: clamp(5px, 0.6vw, 10px); padding-top: clamp(6px, 0.7vw, 12px);
-  border-top: 1px solid var(--line-soft); min-width: 0; }
-.f-lead { display: flex; align-items: center; gap: 9px; flex: none; }
-.f-avatar { width: clamp(26px, 1.75vw, 34px); height: clamp(26px, 1.75vw, 34px); border-radius: 50%;
-  display: grid; place-items: center; font-weight: 700; font-size: clamp(11px, 0.95vw, 16px);
-  color: var(--ink-bright); background: rgba(255, 255, 255, 0.09);
-  border: 1px solid var(--line); }
-.f-lead-text small { display: block; color: var(--ink-faint); text-transform: uppercase;
-  letter-spacing: 0.16em; font-size: clamp(7px, 0.56vw, 10px); font-weight: 700; }
-.f-lead-text b { font-size: clamp(12px, 1.05vw, 19px); font-weight: 700; color: var(--ink); }
-.f-partner { color: var(--ink-dim); font-size: clamp(11px, 0.85vw, 15px); min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.f-partner b { color: var(--ink); font-weight: 600; }
-.f-chips-inline { margin-left: auto; display: flex; gap: 8px; flex-wrap: nowrap; justify-content: flex-end; }
+.f-lead { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.f-avatar { flex: none; width: clamp(22px, 1.5vw, 28px); height: clamp(22px, 1.5vw, 28px);
+  border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+  font-size: clamp(10px, 0.82vw, 14px); color: var(--ink-bright);
+  background: var(--chip-strong); border: 1px solid var(--line); }
 .f-chip { padding: 5px 13px; border-radius: 8px; font-size: clamp(10px, 0.85vw, 15px); font-weight: 600;
-  white-space: nowrap; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line);
+  white-space: nowrap; background: var(--chip); border: 1px solid var(--line);
   color: var(--ink-dim); }
 
 /* ---------------- Active Projects board ---------------- */
 .board-wrap { display: flex; flex-direction: column; min-height: 0; }
 .board-grid { display: grid; grid-template-columns: var(--board-cols); gap: clamp(10px, 0.85vw, 17px);
   align-items: center; padding: 0; }
-.board-header { padding: 0 8px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.board-header { padding: 0 var(--section-pad) 7px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--line); }
 .board-header > span { text-transform: uppercase; letter-spacing: 0.13em; font-size: clamp(9px, 0.78vw, 13px);
   font-weight: 700; color: var(--ink-faint); }
 .board-header > span:nth-child(5) { text-align: right; }
@@ -296,14 +438,13 @@ body.show-cursor { cursor: default; }
    in the same order, so the eye tracks the change instead of the whole slab
    blinking. `backwards` fill (not `both`) leaves the row transitionable on exit. */
 .board-row { display: grid; grid-template-columns: var(--board-cols); gap: clamp(10px, 0.85vw, 17px);
-  align-items: center; min-height: 0; padding: 0 8px; border-bottom: 1px solid var(--line-soft);
+  align-items: center; min-height: 0; padding: 0 var(--section-pad);
+  border-bottom: 1px solid var(--line-soft);
   animation: row-in var(--dur-slow) var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 40ms);
   transition: opacity 200ms var(--ease-in), transform 200ms var(--ease-in);
   transition-delay: calc(var(--i, 0) * 22ms); }
 .board-row:nth-child(odd) { background: var(--zebra); }
-/* Domain group break — a touch heavier than the row rule, no extra row spent. */
-.board-row.group-start { border-top: 1px solid rgba(255, 255, 255, 0.16); }
 .board-row:last-child { border-bottom: none; }
 .board.flip .board-row { opacity: 0; transform: translateY(-12px); }
 @keyframes row-in { from { opacity: 0; transform: translateY(16px); } }
@@ -315,7 +456,7 @@ body.show-cursor { cursor: default; }
 /* Gold spine = externally funded. The one colour on the board, and it means money.
    Unfunded projects get a neutral tick so the column still aligns. */
 .br-swatch { width: 3px; height: 1.5em; border-radius: 2px; flex: none;
-  background: rgba(255, 255, 255, 0.13); }
+  background: var(--tick); }
 .board-row.funded .br-swatch { background: var(--gold); width: 4px; }
 /* The name leads; everything beside it is metadata and steps down in weight and
    brightness rather than in size, so the columns still align on one baseline. */
@@ -329,17 +470,17 @@ body.show-cursor { cursor: default; }
   font-size: calc(var(--row-font) * 0.8); }
 /* Tags ellipsise rather than being sliced mid-word by the column edge. */
 .br-tag { padding: 0.25em 0.7em; border-radius: 6px; font-size: 1em; font-weight: 600;
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: var(--ink-dim);
+  background: var(--chip); border: 1px solid var(--line); color: var(--ink-dim);
   white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* Descriptive tags are all one neutral treatment — the distinction between a
    theme and a method is not something a passer-by needs colour-coded. */
 /* Never shrinks: "Funded" ellipsised to "F…" says nothing, and it is the one tag
    in the row a donor is actually looking for. The descriptive tags beside it
    absorb the squeeze instead. */
-.br-tag.fund { flex: none; color: var(--gold); border-color: rgba(255, 193, 43, 0.34);
-  background: rgba(255, 193, 43, 0.09); font-weight: 700; letter-spacing: 0.04em; }
+.br-tag.fund { flex: none; color: var(--gold); border-color: color-mix(in srgb, var(--gold) 36%, transparent);
+  background: color-mix(in srgb, var(--gold) 11%, transparent); font-weight: 700; letter-spacing: 0.04em; }
 /* Missing values recede rather than reading as three broken cells in a row. */
-.br-none { color: rgba(255, 255, 255, 0.14); }
+.br-none { color: var(--faintest); }
 /* Years read at one weight and one brightness: a dimmed year is harder to read
    from across the room, and the board is sorted by domain now, so a recency
    gradient down the column no longer lines up with anything. */
@@ -350,7 +491,7 @@ body.show-cursor { cursor: default; }
 .rail-wrap { display: flex; flex-direction: column; min-height: 0; }
 .rail-inner { flex: 1; min-width: 0; display: flex; align-items: center;
   background: var(--band); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 0 clamp(10px, 1vw, 19px); overflow: hidden; gap: clamp(12px, 1.3vw, 24px); }
+  padding: 0 calc(var(--section-pad) - 1px); overflow: hidden; gap: clamp(12px, 1.3vw, 24px); }
 /* Both the crawl and the opened story are absolutely positioned, so nothing is
    left in flow to give this band height — take it from the rail instead. */
 .pastwork { flex: 1; min-width: 0; align-self: stretch; position: relative; display: flex;
@@ -367,10 +508,10 @@ body.show-cursor { cursor: default; }
 /* Driven from rAF, not a CSS animation: the reel has a velocity that eases to a
    stop when a story opens and eases back up to cruise afterwards. */
 .pp-reel { display: inline-flex; align-items: center; white-space: nowrap; will-change: transform; }
-.pp-chip { display: inline-flex; align-items: baseline; gap: 10px; padding: 0 clamp(16px, 1.6vw, 32px);
-  border-left: 1px solid var(--line-soft); }
-.pp-chip-sw { align-self: center; width: 3px; height: 1.1em; border-radius: 2px;
-  background: rgba(255, 255, 255, 0.16); flex: none; transition: background-color 500ms ease; }
+/* No rules between entries — space separates them. A divider every 250px turned
+   the strip into a picket fence. */
+.pp-chip { display: inline-flex; align-items: baseline; gap: 10px;
+  padding: 0 clamp(22px, 2.2vw, 44px); }
 .pp-chip-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(13px, 1.08vw, 20px);
   color: var(--ink-dim); transition: color 500ms ease; }
 .pp-chip-yr { font-family: var(--font-serif); font-weight: 600; font-size: clamp(11px, 0.85vw, 15px);
@@ -379,11 +520,10 @@ body.show-cursor { cursor: default; }
    the band telegraphs what is about to open. */
 .pp-chip.next .pp-chip-name { color: var(--ink-bright); font-weight: 700; }
 .pp-chip.next .pp-chip-yr { color: var(--ink-dim); }
-.pp-chip.next .pp-chip-sw { background: var(--ink-dim); }
 
 /* The opened story overlays the reel: name left, credits pushed right (full width). */
 .pp-open { position: absolute; inset: 0; display: flex; align-items: center; gap: clamp(18px, 2vw, 40px);
-  padding-left: clamp(16px, 1.5vw, 24px); background: var(--band); }
+  padding-left: 0; background: var(--band); }
 .pp-open::before { content: ""; position: absolute; left: 0; top: 12%; bottom: 12%; width: 3px;
   border-radius: 2px; background: var(--line); }
 .pp-open.opening { animation: pp-open 560ms var(--ease-out) both; }
@@ -407,7 +547,7 @@ body.show-cursor { cursor: default; }
   font-size: 0.6em; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; }
 .ppf-chip { padding: 4px 11px; border-radius: 7px; font-size: clamp(10px, 0.8vw, 14px); font-weight: 600;
   white-space: nowrap; color: var(--ink-dim);
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
+  background: var(--chip); border: 1px solid var(--line); }
 @keyframes pp-open {
   from { opacity: 1; clip-path: inset(0 100% 0 0); }
   to   { opacity: 1; clip-path: inset(0 0 0 0); }
@@ -420,7 +560,7 @@ body.show-cursor { cursor: default; }
 .workshop { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; min-width: 0;
   animation: line-in 520ms var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
 .ws-date { text-align: center; padding: 4px 12px; border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
+  background: var(--chip); border: 1px solid var(--line); }
 .ws-mon { display: block; text-transform: uppercase; letter-spacing: 0.12em;
   font-size: clamp(8px, 0.72vw, 12px); font-weight: 700; color: var(--ink-faint); }
 .ws-day { display: block; font-size: clamp(16px, 1.5vw, 26px); font-weight: 800; line-height: 1; }
