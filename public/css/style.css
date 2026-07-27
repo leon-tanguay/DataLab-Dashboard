@@ -169,24 +169,22 @@ body.show-cursor { cursor: default; }
 /* Sits immediately left, beside the brand — the clock and hours take the far
    right. margin-right:auto pushes that block away without centring these. */
 /* Never shrinks: if the bar runs out of room the library text truncates, not the
-   figures — a clipped "DEPARTMENT" is worse than a clipped closing time. */
-.stats { display: flex; align-items: stretch; margin-right: auto; flex: none;
-  gap: clamp(12px, 1.35vw, 27px); }
+   figures — a clipped "DEPARTMENT" is worse than a clipped closing time.
+   Spacing lives entirely in each figure's padding-left (no flex gap) so a single
+   figure can tighten against the one before it. */
+.stats { display: flex; align-items: stretch; margin-right: auto; flex: none; }
 .stat { display: flex; flex-direction: column; justify-content: center; gap: 3px;
-  padding-left: clamp(12px, 1.35vw, 27px); border-left: 1px solid var(--line-soft); }
+  padding-left: clamp(22px, 2.5vw, 50px); border-left: 1px solid var(--line-soft); }
 .stat:first-child { border-left: none; padding-left: 0; }
+/* Continues the previous figure's sentence: normal word spacing, no divider, so
+   "…Faculty Partners Across" runs straight into "69 Departments". */
+.stat.joined { padding-left: clamp(4px, 0.45vw, 8px); border-left: none; }
 .stat-num { font-size: clamp(20px, 2.05vw, 39px); font-weight: 800; letter-spacing: -0.02em;
   color: var(--ink-bright); font-variant-numeric: tabular-nums; line-height: 1;
   display: inline-block; text-align: center; }
 .stat-label { font-size: clamp(8px, 0.68vw, 12px); text-transform: uppercase; letter-spacing: 0.17em;
   color: var(--ink-faint); font-weight: 700; white-space: nowrap; }
 
-/* Reach reads as one sentence rather than two tiles — "111 faculty partners
-   across 69 departments" is a fact; two separate numbers are trivia. The
-   connective words sit in the label treatment so the figures still carry. */
-.stat-reach { display: flex; align-items: baseline; gap: 0.5em; white-space: nowrap; }
-.stat-reach .stat-word { font-size: clamp(8px, 0.68vw, 12px); text-transform: uppercase;
-  letter-spacing: 0.17em; color: var(--ink-faint); font-weight: 700; }
 
 /* ---------------- Tier heads ---------------- */
 .tier-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 5px; }

@@ -185,15 +185,14 @@ function statItems() {
   const s = state.stats;
   if (!s) return [];
   const items = [];
-  if (s.active) items.push({ key: 'active', nums: [s.active], label: 'Active Projects' });
-  if (s.delivered) items.push({ key: 'delivered', nums: [s.delivered], label: 'Projects Delivered' });
+  if (s.active) items.push({ key: 'active', n: s.active, label: 'Active Projects' });
+  if (s.delivered) items.push({ key: 'delivered', n: s.delivered, label: 'Projects Delivered' });
   // Partners and departments say more together than apart: one is a headcount,
-  // the pair is a statement about reach across the university.
-  if (s.partners && s.departments) {
-    items.push({ key: 'reach', nums: [s.partners, s.departments], words: ['Faculty Partners Across', 'Departments'] });
-  } else if (s.partners) {
-    items.push({ key: 'partners', nums: [s.partners], label: 'Faculty Partners' });
-  }
+  // the pair is a statement about reach. They stay two ordinary figures so the
+  // row keeps one baseline, and `joined` closes the gap between them so the
+  // labels read straight through as "…partners across 69 departments".
+  if (s.partners) items.push({ key: 'partners', n: s.partners, label: s.departments ? 'Faculty Partners Across' : 'Faculty Partners' });
+  if (s.departments) items.push({ key: 'departments', n: s.departments, label: 'Departments', joined: Boolean(s.partners) });
   return items;
 }
 // Reserve the final digit count so counting up can't reflow the sentence around
@@ -204,26 +203,16 @@ function renderStats() {
   const items = statItems();
   const el = $('#stats');
   if (!items.length) { el.innerHTML = ''; lastStatSig = ''; return; }
-  const sig = items.map((it) => it.key).join('|');
+  const sig = items.map((it) => it.key + (it.joined ? '+' : '')).join('|');
   if (sig !== lastStatSig) {
     lastStatSig = sig;
     el.innerHTML = items
-      .map((it, i) => {
-        const body = it.words
-          ? `<span class="stat-reach">${numSpan(it.nums[0])}<span class="stat-word">${esc(it.words[0])}</span>` +
-            `${numSpan(it.nums[1])}<span class="stat-word">${esc(it.words[1])}</span></span>`
-          : `${numSpan(it.nums[0])}<span class="stat-label">${esc(it.label)}</span>`;
-        return `<div class="stat" data-k="${i}">${body}</div>`;
-      })
+      .map((it, i) => `<div class="stat${it.joined ? ' joined' : ''}" data-k="${i}">` +
+        `${numSpan(it.n)}<span class="stat-label">${esc(it.label)}</span></div>`)
       .join('');
   }
-  // One clock for every figure on the bar, so they all land together.
-  const entries = [];
-  items.forEach((it, i) => {
-    const nums = el.querySelectorAll(`.stat[data-k="${i}"] .stat-num`);
-    it.nums.forEach((n, j) => entries.push({ el: nums[j], to: Number(n) }));
-  });
-  countAll(entries);
+  // One clock for every figure on the bar, so they all land on the same frame.
+  countAll(items.map((it, i) => ({ el: el.querySelector(`.stat[data-k="${i}"] .stat-num`), to: Number(it.n) })));
 }
 
 /* ---------------- Tier 1: Active Projects board (paged) ---------------- */
