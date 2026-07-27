@@ -564,10 +564,12 @@ function ppOpenHTML(p) {
   if (p.lead) credits.push(`<span class="ppf-seg"><i>Lead</i>${esc(p.lead)}</span>`);
   if (partner) credits.push(`<span class="ppf-seg"><i>Partner</i>${esc(partner)}</span>`);
   const chip = p.domain ? `<span class="ppf-chip">${esc(titleCase(p.domain))}</span>` : '';
-  // Year and title are one unit on the left; credits sit as a block on the right.
-  return `<div class="ppf-main"><span class="ppf-year">${p.year || ''}</span>` +
-    `<b class="ppf-name">${esc(prettyName(p.name))}</b></div>` +
-    (credits.length || chip ? `<div class="ppf-credits">${credits.join('')}${chip}</div>` : '');
+  // Year as a stamp on the left, title over credits beside it — two lines fill the
+  // band, where a single horizontal strip left two thirds of it empty.
+  return `<span class="ppf-year">${p.year || ''}</span>` +
+    `<div class="ppf-stack"><b class="ppf-name">${esc(prettyName(p.name))}</b>` +
+    (credits.length || chip ? `<div class="ppf-credits">${credits.join('')}${chip}</div>` : '') +
+    `</div>`;
 }
 // A continuously-scrolling list of every past project, driven from rAF rather
 // than a CSS animation so it has a real velocity — and so it can aim.

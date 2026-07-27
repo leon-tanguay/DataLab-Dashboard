@@ -543,23 +543,27 @@ body.show-cursor { cursor: default; }
 .pp-open.opening .ppf-credits > *:nth-child(2) { animation-delay: 330ms; }
 .pp-open.opening .ppf-credits > *:nth-child(3) { animation-delay: 400ms; }
 
-.ppf-main { flex: 1; min-width: 0; display: flex; align-items: baseline;
-  gap: clamp(10px, 1.1vw, 20px); }
-/* The year is a date stamp, not a headline — it sits back so the title leads. */
-.ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--ink-faint);
-  font-size: clamp(15px, 1.4vw, 26px); line-height: 1.2; font-variant-numeric: tabular-nums; }
+/* Two lines: title over credits, with the year set beside them as a stamp. A
+   single horizontal strip could not fill a band this tall without the type going
+   disproportionate for a secondary rail. */
+.ppf-year { flex: none; align-self: center; font-family: var(--font-serif); font-weight: 600;
+  color: var(--ink-faint); font-size: clamp(20px, 1.95vw, 37px); line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.ppf-stack { flex: 1; min-width: 0; display: flex; flex-direction: column;
+  justify-content: center; gap: clamp(3px, 0.4vw, 7px); }
 .ppf-name { min-width: 0; font-family: var(--font-serif); font-weight: 600;
-  font-size: clamp(18px, 1.7vw, 32px); line-height: 1.25; color: var(--ink-bright);
+  font-size: clamp(17px, 1.6vw, 30px); line-height: 1.2; color: var(--ink-bright);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Label over value, baselines shared across the row, matching the credit block on
-   the featured card so the two read as the same object. */
-.ppf-credits { flex: none; display: flex; align-items: center; gap: clamp(16px, 1.7vw, 32px); }
-.ppf-seg { font-size: clamp(12px, 1.05vw, 19px); color: var(--ink); font-weight: 700;
+/* Credits run inline on the second line — label then value, not stacked, so the
+   whole block stays two lines tall however many credits a project has. */
+.ppf-credits { display: flex; align-items: baseline; flex-wrap: nowrap; min-width: 0;
+  gap: clamp(10px, 1.1vw, 20px); overflow: hidden; }
+.ppf-seg { flex: none; font-size: clamp(11px, 0.95vw, 17px); color: var(--ink); font-weight: 700;
   white-space: nowrap; line-height: 1.2; }
-.ppf-seg i { font-style: normal; display: block; text-transform: uppercase; letter-spacing: 0.16em;
-  font-size: 0.62em; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; }
-.ppf-chip { padding: 6px 14px; border-radius: 8px; font-size: clamp(11px, 0.9vw, 16px); font-weight: 600;
-  white-space: nowrap; color: var(--ink-dim);
+.ppf-seg i { font-style: normal; text-transform: uppercase; letter-spacing: 0.14em;
+  font-size: 0.72em; font-weight: 700; color: var(--ink-faint); margin-right: 0.5em; }
+.ppf-chip { flex: none; padding: 3px 11px; border-radius: 7px; font-size: clamp(10px, 0.82vw, 15px);
+  font-weight: 600; white-space: nowrap; color: var(--ink-dim);
   background: var(--chip); border: 1px solid var(--line); }
 @keyframes pp-open {
   from { opacity: 1; clip-path: inset(0 100% 0 0); }
