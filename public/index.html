@@ -20,18 +20,9 @@
           </div>
         </div>
 
-        <div class="statcycle" id="statcycle" aria-label="At a glance"></div>
-
-        <div class="topbar-right">
-          <div class="hours-block" id="hours-block" data-status="unknown">
-            <span class="hours-key" aria-hidden="true"></span>
-            <div id="hours-text" class="hours-text">Shields Library</div>
-          </div>
-          <div class="clock">
-            <div id="clock-time" class="clock-time">--:--</div>
-            <div id="clock-date" class="clock-date">&nbsp;</div>
-          </div>
-        </div>
+        <!-- Static, always-legible. A moving ticker only ever gives a passer-by
+             half a number. -->
+        <div class="stats" id="stats" aria-label="At a glance"></div>
       </header>
 
       <!-- Closing-soon banner -->
@@ -66,6 +57,18 @@
           <ul id="workshop-list" class="workshop-list" hidden></ul>
           <div id="pastwork" class="pastwork" hidden>
             <div id="pp-feature" class="pp-feature"></div>
+          </div>
+          <!-- Library hours and clock live down here: useful to students, not the
+               reason a donor stopped walking. Alerts still take over the screen. -->
+          <div class="rail-aside">
+            <div class="hours-block" id="hours-block" data-status="unknown">
+              <span class="hours-key" aria-hidden="true"></span>
+              <div id="hours-text" class="hours-text">Shields Library</div>
+            </div>
+            <div class="clock">
+              <div id="clock-time" class="clock-time">--:--</div>
+              <div id="clock-date" class="clock-date">&nbsp;</div>
+            </div>
           </div>
         </div>
       </section>

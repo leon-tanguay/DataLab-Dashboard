@@ -27,9 +27,17 @@
   --panel: rgba(255, 255, 255, 0.03);
   --panel-strong: rgba(12, 30, 50, 0.55);
   --band: #0c1f34;
+  /* ---- Colour system -------------------------------------------------
+     Every hue carries exactly one meaning, decodable without a legend:
+       gold   → external funding (money)
+       bright → recent / primary (this year's work, project names, headline figures)
+       green  → library open      (status dot only)
+       red    → alert             (closing banner, CLOSED takeover)
+     Everything else is the neutral ramp. Research domain used to be seven
+     arbitrary hues on every row; nobody walking past could decode it, so it is
+     text now and breadth is carried by the "Research Areas" figure instead. */
   --gold: #ffc12b;
   --gold-soft: #ffd873;
-  --teal: #45bccb;
   --green: #46d08a;
   --ink-bright: #f8fbff;
   --ink: #eef4fb;
@@ -140,33 +148,31 @@ body.show-cursor { cursor: default; }
 .hours-block[data-status="closing"] .hours-key::after { animation: ping 1s var(--ease-out) infinite; }
 .hours-block[data-status="closed"] .hours-key { background: var(--danger); }
 @keyframes ping { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.6); opacity: 0; } }
-.hours-text { font-size: clamp(13px, 1.12vw, 20px); font-weight: 600; color: var(--ink-dim); white-space: nowrap; }
-.hours-block[data-status="open"] .hours-text { color: var(--ink); }
+/* Sized as utility text, not a headline — this is secondary information now. */
+.hours-text { font-size: clamp(10px, 0.85vw, 15px); font-weight: 600; color: var(--ink-faint); white-space: nowrap; }
+.hours-block[data-status="open"] .hours-text { color: var(--ink-dim); }
 .hours-block[data-status="closing"] .hours-text { color: var(--danger-soft); }
 .hours-block[data-status="closed"] .hours-text { color: var(--danger); }
-.hours-text b { font-weight: 700; color: var(--gold-soft); }
+.hours-text b { font-weight: 700; color: var(--ink); }
 
-.clock { text-align: right; line-height: 1.05; }
-.clock-time { font-weight: 700; font-size: clamp(19px, 1.7vw, 30px); font-variant-numeric: tabular-nums; }
-.clock-date { color: var(--ink-dim); font-size: clamp(10px, 0.82vw, 14px); font-weight: 500; letter-spacing: 0.02em; }
+.clock { text-align: right; line-height: 1.1; }
+.clock-time { font-weight: 700; font-size: clamp(14px, 1.2vw, 22px); font-variant-numeric: tabular-nums;
+  color: var(--ink-dim); }
+.clock-date { color: var(--ink-faint); font-size: clamp(8px, 0.66vw, 11px); font-weight: 500; letter-spacing: 0.02em; }
 
-/* ---------------- Header stat strip (slow horizontal scroll) ---------------- */
-.statcycle { flex: 1; min-width: 0; overflow: hidden; display: flex; align-items: center;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
-/* Duration comes from JS: track width ÷ a fixed px/sec, so the crawl reads at the
-   same speed whether the lab has four numbers or a dozen. */
-.sc-track { display: inline-flex; align-items: center; white-space: nowrap; will-change: transform;
-  animation: mq-scroll var(--mq-duration, 55s) linear infinite; }
-.mq-unit { display: inline-flex; align-items: center; }
-.sc-item { display: inline-flex; align-items: baseline; gap: 12px; padding: 0 clamp(28px, 3.2vw, 64px);
-  border-left: 1px solid var(--line-soft); }
-.sc-num { display: inline-block; text-align: right;
-  font-size: clamp(17px, 1.5vw, 27px); font-weight: 800; letter-spacing: -0.01em;
-  color: var(--gold); font-variant-numeric: tabular-nums; line-height: 1; }
-.sc-label { font-size: clamp(13px, 1.1vw, 20px); text-transform: uppercase; letter-spacing: 0.13em;
-  color: var(--ink-dim); font-weight: 600; }
-@keyframes mq-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+/* ---------------- Headline figures (static) ----------------
+   Four numbers, always on screen, sized to be read across a room. Big bright
+   numeral over a small dim label: hierarchy from weight and colour, and gold is
+   left alone so it can keep meaning "funded" on the board below. */
+.stats { display: flex; align-items: stretch; margin-left: auto;
+  gap: clamp(18px, 2.2vw, 46px); min-width: 0; }
+.stat { display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  padding-left: clamp(18px, 2.2vw, 46px); border-left: 1px solid var(--line-soft); }
+.stat:first-child { border-left: none; padding-left: 0; }
+.stat-num { font-size: clamp(20px, 2.05vw, 39px); font-weight: 800; letter-spacing: -0.02em;
+  color: var(--ink-bright); font-variant-numeric: tabular-nums; line-height: 1; }
+.stat-label { font-size: clamp(8px, 0.68vw, 12px); text-transform: uppercase; letter-spacing: 0.17em;
+  color: var(--ink-faint); font-weight: 700; white-space: nowrap; }
 
 /* ---------------- Tier heads ---------------- */
 .tier-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 5px; }
@@ -195,23 +201,25 @@ body.show-cursor { cursor: default; }
      leave a dead band between the headline and the credit line. */
   display: flex; flex-direction: column; justify-content: center;
   gap: clamp(6px, 0.7vw, 12px);
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: clamp(10px, 1vw, 18px) clamp(18px, 2vw, 38px);
+  /* No panel, no border: a frame around a headline is a box doing work that
+     scale and space already do. The rule on the left is the only chrome. */
+  padding: clamp(8px, 0.9vw, 16px) 0 clamp(8px, 0.9vw, 16px) clamp(18px, 1.9vw, 34px);
   position: relative; overflow: hidden;
   transition: opacity var(--dur-slow) var(--ease-in), transform var(--dur-slow) var(--ease-in);
 }
 .featured.fading { opacity: 0; transform: translateY(-10px); }
-/* Left accent bar keyed to the project's field — wipes down on each new project. */
-.featured::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
-  background: var(--accent, var(--gold)); transform-origin: top; z-index: 1; }
+/* The one piece of chrome: a rule that wipes down as each project arrives. */
+.featured::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--line); transform-origin: top; z-index: 1; }
 .featured.enter::before { animation: bar-wipe 640ms var(--ease-out) both; }
 @keyframes bar-wipe { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
-/* Dwell countdown: fills over exactly one rotation interval (set from JS). */
-.featured::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-  background: var(--accent, var(--gold)); opacity: 0.55; transform: scaleX(0);
-  transform-origin: left; z-index: 1; }
-.featured.enter::after { animation: fill var(--rotate-dur, 15s) linear forwards; }
+/* Dwell countdown rides the same rule, so the card needs no second element and
+   the countdown reads as the rule filling rather than a progress bar bolted on. */
+.featured::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--ink-faint); transform: scaleY(0); transform-origin: top; z-index: 2; }
+.featured.enter::after { animation: fill-y var(--rotate-dur, 15s) linear forwards; }
+@keyframes fill-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
 /* Content lands line by line rather than as one block. */
 .featured.enter > * { animation: line-in 560ms var(--ease-out) backwards; }
@@ -223,10 +231,10 @@ body.show-cursor { cursor: default; }
 .f-eyebrow { color: var(--ink-dim); font-weight: 600; font-size: clamp(10px, 0.85vw, 15px);
   letter-spacing: 0.03em; display: flex; gap: 10px; align-items: center; }
 .f-eyebrow .f-domain { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7em;
-  color: var(--accent, var(--gold)); padding: 3px 11px; border: 1px solid;
-  border-color: color-mix(in srgb, var(--accent, var(--gold)) 45%, transparent); border-radius: 999px; }
+  color: var(--ink-dim); padding: 3px 11px; border: 1px solid var(--line); border-radius: 999px; }
+/* Gold again, and only here: this is the funding signal. */
 .f-eyebrow .f-fund { text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.66em; font-weight: 700;
-  color: var(--green); padding: 3px 11px; border: 1px solid rgba(70, 208, 138, 0.4); border-radius: 999px; }
+  color: var(--gold); padding: 3px 11px; border: 1px solid rgba(255, 193, 43, 0.4); border-radius: 999px; }
 .f-title { font-family: var(--font-serif); font-weight: 600; line-height: 1.12;
   font-size: clamp(16px, 1.48vw, 28px); letter-spacing: 0; color: var(--ink-bright);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -240,7 +248,8 @@ body.show-cursor { cursor: default; }
 .f-lead { display: flex; align-items: center; gap: 9px; flex: none; }
 .f-avatar { width: clamp(26px, 1.75vw, 34px); height: clamp(26px, 1.75vw, 34px); border-radius: 50%;
   display: grid; place-items: center; font-weight: 700; font-size: clamp(11px, 0.95vw, 16px);
-  color: var(--bg); background: var(--accent, var(--gold)); }
+  color: var(--ink-bright); background: rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--line); }
 .f-lead-text small { display: block; color: var(--ink-faint); text-transform: uppercase;
   letter-spacing: 0.16em; font-size: clamp(7px, 0.56vw, 10px); font-weight: 700; }
 .f-lead-text b { font-size: clamp(12px, 1.05vw, 19px); font-weight: 700; color: var(--ink); }
@@ -249,9 +258,8 @@ body.show-cursor { cursor: default; }
 .f-partner b { color: var(--ink); font-weight: 600; }
 .f-chips-inline { margin-left: auto; display: flex; gap: 8px; flex-wrap: nowrap; justify-content: flex-end; }
 .f-chip { padding: 5px 13px; border-radius: 8px; font-size: clamp(10px, 0.85vw, 15px); font-weight: 600;
-  white-space: nowrap; background: rgba(69, 188, 203, 0.1); border: 1px solid rgba(69, 188, 203, 0.28);
-  color: #b7e6ee; }
-.f-chip.theme { background: rgba(255, 193, 43, 0.09); border-color: rgba(255, 193, 43, 0.3); color: var(--gold-soft); }
+  white-space: nowrap; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line);
+  color: var(--ink-dim); }
 
 /* ---------------- Active Projects board ---------------- */
 .board-wrap { display: flex; flex-direction: column; min-height: 0; }
@@ -286,14 +294,18 @@ body.show-cursor { cursor: default; }
    Rows are strictly single-line: a wrapped title would make one row taller than
    the rest and push the last project off the bottom of the band. */
 .br-name { display: flex; align-items: center; gap: 0.6em; min-width: 0; font-size: var(--row-font); }
-/* A domain-coloured spine, not a dot: reads as a category band across the room. */
-.br-swatch { width: 4px; height: 1.5em; border-radius: 2px; flex: none;
-  background: var(--sw, var(--teal)); }
-.br-title { font-weight: 600; font-size: 1em; line-height: 1.15; color: var(--ink);
+/* Gold spine = externally funded. The one colour on the board, and it means money.
+   Unfunded projects get a neutral tick so the column still aligns. */
+.br-swatch { width: 3px; height: 1.5em; border-radius: 2px; flex: none;
+  background: rgba(255, 255, 255, 0.13); }
+.board-row.funded .br-swatch { background: var(--gold); width: 4px; }
+/* The name leads; everything beside it is metadata and steps down in weight and
+   brightness rather than in size, so the columns still align on one baseline. */
+.br-title { font-weight: 700; font-size: 1em; line-height: 1.15; color: var(--ink-bright);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.br-lead { font-size: calc(var(--row-font) * 0.92); color: var(--ink); font-weight: 500;
+.br-lead { font-size: calc(var(--row-font) * 0.88); color: var(--ink-dim); font-weight: 500;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.br-partner { font-size: calc(var(--row-font) * 0.92); color: var(--ink-dim); line-height: 1.15;
+.br-partner { font-size: calc(var(--row-font) * 0.88); color: var(--ink-dim); line-height: 1.15;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .br-focus { display: flex; gap: 0.45em; overflow: hidden; min-width: 0;
   font-size: calc(var(--row-font) * 0.8); }
@@ -301,28 +313,29 @@ body.show-cursor { cursor: default; }
 .br-tag { padding: 0.25em 0.7em; border-radius: 6px; font-size: 1em; font-weight: 600;
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: var(--ink-dim);
   white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Themes are the research area, approaches the method — worth telling apart. */
-.br-tag.theme { background: rgba(255, 193, 43, 0.08); border-color: rgba(255, 193, 43, 0.22);
-  color: var(--gold-soft); }
-/* Domain fallback carries the same colour as the row's spine, so the category
-   reads twice across the row. */
-.br-tag.domain { color: var(--sw, var(--teal)); border-color: color-mix(in srgb, var(--sw, var(--teal)) 32%, transparent);
-  background: color-mix(in srgb, var(--sw, var(--teal)) 9%, transparent); }
+/* Descriptive tags are all one neutral treatment — the distinction between a
+   theme and a method is not something a passer-by needs colour-coded. */
 /* Never shrinks: "Funded" ellipsised to "F…" says nothing, and it is the one tag
    in the row a donor is actually looking for. The descriptive tags beside it
    absorb the squeeze instead. */
-.br-tag.fund { flex: none; color: var(--green); border-color: rgba(70, 208, 138, 0.3);
-  background: rgba(70, 208, 138, 0.08); font-weight: 700; letter-spacing: 0.04em; }
-/* Year recency carries weight: this year's starts read bright, older ones recede. */
+.br-tag.fund { flex: none; color: var(--gold); border-color: rgba(255, 193, 43, 0.34);
+  background: rgba(255, 193, 43, 0.09); font-weight: 700; letter-spacing: 0.04em; }
+/* Missing values recede rather than reading as three broken cells in a row. */
+.br-none { color: rgba(255, 255, 255, 0.14); }
+/* Recency reads as brightness, not hue — gold is spoken for. */
 .br-since { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;
-  font-size: calc(var(--row-font) * 0.92); color: var(--ink-faint); }
-.br-since.recent { color: var(--gold); font-weight: 700; }
+  font-size: calc(var(--row-font) * 0.88); color: var(--ink-faint); }
+.br-since.recent { color: var(--ink); font-weight: 700; }
 
 /* ---------------- Workshops / Past projects ---------------- */
 .rail-wrap { display: flex; flex-direction: column; min-height: 0; }
 .rail-inner { flex: 1; min-width: 0; display: flex; align-items: center;
   background: var(--band); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 0 clamp(10px, 1vw, 19px); overflow: hidden; }
+  padding: 0 clamp(10px, 1vw, 19px); overflow: hidden; gap: clamp(12px, 1.3vw, 24px); }
+/* Library status + clock, docked at the end of the bottom rail. Separated by a
+   rule so it reads as a distinct utility block rather than part of the crawl. */
+.rail-aside { flex: none; display: flex; align-items: center; gap: clamp(12px, 1.3vw, 24px);
+  align-self: stretch; padding-left: clamp(12px, 1.3vw, 24px); border-left: 1px solid var(--line); }
 /* Both the crawl and the opened story are absolutely positioned, so nothing is
    left in flow to give this band height — take it from the rail instead. */
 .pastwork { flex: 1; min-width: 0; align-self: stretch; position: relative; display: flex;
@@ -341,8 +354,8 @@ body.show-cursor { cursor: default; }
 .pp-reel { display: inline-flex; align-items: center; white-space: nowrap; will-change: transform; }
 .pp-chip { display: inline-flex; align-items: baseline; gap: 10px; padding: 0 clamp(16px, 1.6vw, 32px);
   border-left: 1px solid var(--line-soft); }
-.pp-chip-sw { align-self: center; width: 7px; height: 7px; border-radius: 2px; background: var(--sw, var(--teal));
-  flex: none; opacity: 0.55; transition: opacity 500ms ease; }
+.pp-chip-sw { align-self: center; width: 3px; height: 1.1em; border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16); flex: none; transition: background-color 500ms ease; }
 .pp-chip-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(13px, 1.08vw, 20px);
   color: var(--ink-dim); transition: color 500ms ease; }
 .pp-chip-yr { font-family: var(--font-serif); font-weight: 600; font-size: clamp(11px, 0.85vw, 15px);
@@ -350,14 +363,14 @@ body.show-cursor { cursor: default; }
 /* The project the reel is travelling toward — lit up well before it arrives, so
    the band telegraphs what is about to open. */
 .pp-chip.next .pp-chip-name { color: var(--ink-bright); font-weight: 700; }
-.pp-chip.next .pp-chip-yr { color: var(--gold); }
-.pp-chip.next .pp-chip-sw { opacity: 1; }
+.pp-chip.next .pp-chip-yr { color: var(--ink-dim); }
+.pp-chip.next .pp-chip-sw { background: var(--ink-dim); }
 
 /* The opened story overlays the reel: name left, credits pushed right (full width). */
 .pp-open { position: absolute; inset: 0; display: flex; align-items: center; gap: clamp(18px, 2vw, 40px);
   padding-left: clamp(16px, 1.5vw, 24px); background: var(--band); }
-.pp-open::before { content: ""; position: absolute; left: 0; top: 12%; bottom: 12%; width: 4px;
-  border-radius: 2px; background: var(--accent, var(--gold)); }
+.pp-open::before { content: ""; position: absolute; left: 0; top: 12%; bottom: 12%; width: 3px;
+  border-radius: 2px; background: var(--line); }
 .pp-open.opening { animation: pp-open 560ms var(--ease-out) both; }
 .pp-open.closing { animation: pp-close 340ms var(--ease-in) both; }
 /* Credits trail in behind the wipe so the story assembles rather than appearing. */
@@ -367,7 +380,7 @@ body.show-cursor { cursor: default; }
 .pp-open.opening .ppf-credits > *:nth-child(3) { animation-delay: 400ms; }
 /* Sized to sit inside the rail band without the serif descenders touching its
    edges — this strip is the shortest on screen, so it clips first. */
-.ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--gold);
+.ppf-year { flex: none; font-family: var(--font-serif); font-weight: 600; color: var(--ink-dim);
   font-size: clamp(17px, 1.45vw, 27px); line-height: 1.2; font-variant-numeric: tabular-nums; }
 .ppf-body { min-width: 0; flex: 0 1 auto; }
 .ppf-name { font-family: var(--font-serif); font-weight: 600; font-size: clamp(13px, 1.15vw, 21px);
@@ -377,10 +390,9 @@ body.show-cursor { cursor: default; }
   line-height: 1.2; }
 .ppf-seg i { font-style: normal; display: block; text-transform: uppercase; letter-spacing: 0.14em;
   font-size: 0.6em; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; }
-.ppf-chip { padding: 4px 11px; border-radius: 7px; font-size: clamp(10px, 0.8vw, 14px); font-weight: 700;
-  white-space: nowrap; color: var(--accent, var(--gold));
-  background: color-mix(in srgb, var(--accent, var(--gold)) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent, var(--gold)) 45%, transparent); }
+.ppf-chip { padding: 4px 11px; border-radius: 7px; font-size: clamp(10px, 0.8vw, 14px); font-weight: 600;
+  white-space: nowrap; color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
 @keyframes pp-open {
   from { opacity: 1; clip-path: inset(0 100% 0 0); }
   to   { opacity: 1; clip-path: inset(0 0 0 0); }
@@ -393,9 +405,9 @@ body.show-cursor { cursor: default; }
 .workshop { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; min-width: 0;
   animation: line-in 520ms var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
 .ws-date { text-align: center; padding: 4px 12px; border-radius: 8px;
-  background: rgba(255, 193, 43, 0.12); border: 1px solid rgba(255, 193, 43, 0.28); }
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
 .ws-mon { display: block; text-transform: uppercase; letter-spacing: 0.12em;
-  font-size: clamp(8px, 0.72vw, 12px); font-weight: 700; color: var(--gold-soft); }
+  font-size: clamp(8px, 0.72vw, 12px); font-weight: 700; color: var(--ink-faint); }
 .ws-day { display: block; font-size: clamp(16px, 1.5vw, 26px); font-weight: 800; line-height: 1; }
 .ws-body { min-width: 0; }
 .ws-body b { display: block; font-size: clamp(12px, 1vw, 17px); font-weight: 700; line-height: 1.15;

@@ -51,7 +51,7 @@ let cursorTimer = null;
 /* ---------------- motion ---------------- */
 // Crawl speeds in px/sec. Durations are always derived from measured width so
 // the perceived speed never changes with the amount of content.
-const SPEED = { stats: 24, reel: 85 };
+const SPEED = { reel: 85 };
 // This is signage, not a personal browser: the crawls and rotations *are* how the
 // board gets through its content, and the people reading it can't opt in. A
 // display OS with "reduce animations" switched on would otherwise freeze it, so
@@ -69,21 +69,6 @@ document.documentElement.dataset.motion = reduceMotion ? 'reduce' : 'full';
 const insetParam = Number(new URLSearchParams(location.search).get('inset'));
 if (Number.isFinite(insetParam) && insetParam > 0) {
   document.documentElement.style.setProperty('--safe-inset', `${Math.min(120, insetParam)}px`);
-}
-
-// Build a seamless CSS marquee: repeat `unit` until one half is at least as wide
-// as the viewport, duplicate that half, then set duration = halfWidth / pxPerSec.
-function buildMarquee(host, trackClass, unitHTML, pxPerSec) {
-  host.innerHTML = `<div class="${trackClass}"><span class="mq-unit">${unitHTML}</span></div>`;
-  const track = host.firstElementChild;
-  const unitW = track.firstElementChild.getBoundingClientRect().width;
-  const hostW = host.getBoundingClientRect().width;
-  if (!unitW || !hostW) return track;
-  const reps = Math.max(1, Math.ceil(hostW / unitW));
-  const half = `<span class="mq-unit">${unitHTML}</span>`.repeat(reps);
-  track.innerHTML = half + half;
-  track.style.setProperty('--mq-duration', `${(reps * unitW) / pxPerSec}s`);
-  return track;
 }
 
 // Ease a value toward a target at a rate independent of frame timing.
@@ -122,25 +107,25 @@ const initials = (name) => {
 // A donor board shouldn't show raw keys.
 const prettyName = (s) =>
   String(s || '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b[a-z]/g, (c) => c.toUpperCase());
-const realName = (v) => {
-  const s = (v || '').trim();
-  return !s || /^(internal|n\/?a|tbd|none)$/i.test(s) ? '' : s;
-};
 
-// Color-code by research domain so the breadth of fields reads at a glance.
-const DOMAIN_COLORS = [
-  [/health|medic|clinical|brain|disease/i, '#ff6f7d'],
-  [/life|bio|ecolog|genom|plant|animal/i, '#4fd08a'],
-  [/environ|climate|water|geo|earth|spatial/i, '#3fb6c4'],
-  [/human|art|cultur|histor|literat|language/i, '#ffc24d'],
-  [/social|policy|econom|education|justice/i, '#a99bff'],
-  [/data|method|engineer|comput|software|ai|machine/i, '#5aa9ff'],
-];
-function domainColor(domain) {
-  const d = (domain || '').toLowerCase();
-  for (const [re, col] of DOMAIN_COLORS) if (re.test(d)) return col;
-  return '#8aa4c2';
+// The partner field is free text in the source sheet and carries a fair amount of
+// operational residue — email addresses, "internal", pipe-delimited unit paths.
+// None of it belongs on a screen meant to impress visitors, and a raw address
+// costs more credibility than any amount of polish elsewhere buys.
+const PLACEHOLDER = /^(internal|n\/?a|tbd|none|unknown|-+)$/i;
+function realName(v) {
+  let s = String(v == null ? '' : v).trim();
+  if (!s || PLACEHOLDER.test(s)) return '';
+  if (s.includes('@')) return '';                       // "pguzmandelgado@ucdavis.edu"
+  s = s.split('|').pop().trim();                        // "Library | DataLab" → "DataLab"
+  // "internal, UCSB" → "UCSB"; drop placeholder fragments from comma lists.
+  s = s.split(',').map((p) => p.trim()).filter((p) => p && !PLACEHOLDER.test(p)).join(', ');
+  return PLACEHOLDER.test(s) ? '' : s;
 }
+
+// Research domain used to drive a seven-hue palette across every row. With no
+// legend on screen it encoded nothing a passer-by could read, so it is plain text
+// now; the only colour on the board is gold, and it means external funding.
 
 /* ---------------- fetch ---------------- */
 async function getJSON(path) {
@@ -185,43 +170,36 @@ async function poll() {
 function setConn(ok) { $('#conn').hidden = ok || state.failures < 2; }
 
 /* ---------------- Header stat strip (slow scroll, ~2 at a time) ---------------- */
+// Four figures, chosen for what a donor actually weighs: how much is running now,
+// how much has landed, and how far across the university the lab reaches. Held to
+// four so each can be large enough to read from across the room.
 function statItems() {
   const s = state.stats;
   if (!s) return [];
-  const items = [
+  return [
     [s.active, 'Active Projects'],
-    [s.delivered, 'Projects Completed'],
+    [s.delivered, 'Projects Delivered'],
     [s.partners, 'Faculty Partners'],
     [s.departments, 'Departments'],
-    [s.domains, 'Research Areas'],
   ].filter(([n]) => n != null && n !== 0);
-  if (s.sinceYear) items.push([new Date().getFullYear() - s.sinceYear, 'Years Active']);
-  return items;
 }
 let lastStatSig = '';
 function renderStats() {
   const items = statItems();
-  const el = $('#statcycle');
+  const el = $('#stats');
   if (!items.length) { el.innerHTML = ''; lastStatSig = ''; return; }
-  // Only rebuild when the set of stats changes, so the crawl isn't reset every poll.
   const sig = items.map(([, l]) => l).join('|');
-  if (sig === lastStatSig) { updateStatValues(items); return; }
-  lastStatSig = sig;
-  // Render the final values so the track is measured at its settled width, and
-  // reserve the digit count so counting up can't change the layout underneath the
-  // crawl (tabular-nums makes 1ch exactly one digit's advance).
-  const unit = items
-    .map(([n, l], i) => `<span class="sc-item" data-k="${i}">` +
-      `<span class="sc-num" style="min-width:${String(n).length}ch">${n}</span>` +
-      `<span class="sc-label">${esc(l)}</span></span>`)
-    .join('');
-  buildMarquee(el, 'sc-track', unit, SPEED.stats);
-  updateStatValues(items);
-}
-// Every copy of a stat in the duplicated track counts to the same value together.
-function updateStatValues(items) {
+  if (sig !== lastStatSig) {
+    lastStatSig = sig;
+    el.innerHTML = items
+      .map(([, l], i) => `<div class="stat" data-k="${i}"><span class="stat-num">0</span>` +
+        `<span class="stat-label">${esc(l)}</span></div>`)
+      .join('');
+  }
+  // Counts up on first paint and on any later change; holds still otherwise.
   items.forEach(([n], i) => {
-    $('#statcycle').querySelectorAll(`.sc-item[data-k="${i}"] .sc-num`).forEach((num) => countTo(num, Number(n)));
+    const num = el.querySelector(`.stat[data-k="${i}"] .stat-num`);
+    if (num) countTo(num, Number(n));
   });
 }
 
@@ -270,24 +248,21 @@ function fitBoard(rowCount) {
 const boardPageCount = () => boardLayout().pages;
 const BOARD_PAGE_MS = 12000;
 function boardRow(p, i) {
-  const partner = realName(p.facultyPartner) || p.department || '';
+  // The department fallback needs the same cleanup as the partner field — it
+  // carries unit paths like "CAES | Plant Sciences" straight from the sheet.
+  const partner = realName(p.facultyPartner) || realName(p.department);
   // Themes (the research area) lead, approaches (the method) follow. Only about a
   // third of projects carry either, so fall back to the research domain — that
   // keeps the column meaningful instead of a colonnade of em-dashes.
-  const accent = domainColor(p.domain);
-  let tags = [
-    ...(p.themes || []).map((t) => [t, 'theme']),
-    ...(p.approaches || []).map((t) => [t, '']),
-  ].slice(0, 2);
-  if (!tags.length && p.domain) tags = [[titleCase(p.domain), 'domain']];
-  // External funding is the credibility signal a donor is scanning for.
-  if (p.funded) tags.push(['Funded', 'fund']);
+  let tags = [...(p.themes || []), ...(p.approaches || [])].slice(0, 2);
+  if (!tags.length && p.domain) tags = [titleCase(p.domain)];
   const recent = p.startYear && p.startYear >= new Date().getFullYear() - 1;
-  return `<div class="board-row" style="--i:${i}">
-    <div class="br-name"><span class="br-swatch" style="--sw:${domainColor(p.domain)}"></span><span class="br-title">${esc(prettyName(p.name || p.title))}</span></div>
-    <div class="br-lead">${esc(p.lead || '—')}</div>
-    <div class="br-partner">${esc(partner || '—')}</div>
-    <div class="br-focus" style="--sw:${accent}">${tags.map(([t, c]) => `<span class="br-tag ${c}">${esc(t)}</span>`).join('') || '<span class="br-partner">—</span>'}</div>
+  return `<div class="board-row${p.funded ? ' funded' : ''}" style="--i:${i}">
+    <div class="br-name"><span class="br-swatch"></span><span class="br-title">${esc(prettyName(p.name || p.title))}</span></div>
+    <div class="br-lead">${p.lead ? esc(p.lead) : '<span class="br-none">—</span>'}</div>
+    <div class="br-partner">${partner ? esc(partner) : '<span class="br-none">—</span>'}</div>
+    <div class="br-focus">${tags.map((t) => `<span class="br-tag">${esc(t)}</span>`).join('')}${
+      p.funded ? '<span class="br-tag fund">Funded</span>' : ''}</div>
     <div class="br-since${recent ? ' recent' : ''}">${p.startYear || '—'}</div>
   </div>`;
 }
@@ -352,12 +327,11 @@ function buildFeatured(p) {
   const desc = p.blurb && p.blurb !== headline ? p.blurb : '';
   const faculty = realName(p.facultyPartner);
   const chips = [
-    ...(p.themes || []).slice(0, 2).map((t) => `<span class="f-chip theme">${esc(t)}</span>`),
+    ...(p.themes || []).slice(0, 2).map((t) => `<span class="f-chip">${esc(t)}</span>`),
     ...(p.approaches || []).slice(0, 2).map((a) => `<span class="f-chip">${esc(a)}</span>`),
   ].join('');
-  const accent = domainColor(p.domain);
   return `
-    <div class="f-eyebrow" style="--accent:${accent}">${esc(p.name || 'DataLab')}${p.domain ? `<span class="f-domain">${esc(p.domain)}</span>` : ''}${p.funded ? `<span class="f-fund">Externally Funded</span>` : ''}</div>
+    <div class="f-eyebrow">${esc(prettyName(p.name || 'DataLab'))}${p.domain ? `<span class="f-domain">${esc(p.domain)}</span>` : ''}${p.funded ? `<span class="f-fund">Externally Funded</span>` : ''}</div>
     <div class="f-title">${esc(headline)}</div>
     ${desc ? `<div class="f-desc">${esc(desc)}</div>` : ''}
     <div class="f-foot">
@@ -389,7 +363,6 @@ function renderFeatured(immediate) {
   }
   const p = list[state.featIndex % list.length];
   const swap = () => {
-    el.style.setProperty('--accent', domainColor(p.domain));
     // Dwell bar fills over the rotation minus the fade-out, so it completes at
     // the exact moment the card starts turning rather than after it.
     el.style.setProperty('--rotate-dur', `${rotateMs() - FEAT_FADE_MS}ms`);
@@ -451,8 +424,8 @@ function pastCardHTML(p) {
 }
 const titleCase = (s) => (s || '').replace(/\b\w/g, (c) => c.toUpperCase());
 function pastChipHTML(p, idx) {
-  return `<span class="pp-chip" data-i="${idx}"><span class="pp-chip-sw" style="--sw:${domainColor(p.domain)}"></span>` +
-    `<span class="pp-chip-name">${esc(p.name)}</span><span class="pp-chip-yr">${p.year || ''}</span></span>`;
+  return `<span class="pp-chip" data-i="${idx}"><span class="pp-chip-sw"></span>` +
+    `<span class="pp-chip-name">${esc(prettyName(p.name))}</span><span class="pp-chip-yr">${p.year || ''}</span></span>`;
 }
 function ppOpenHTML(p) {
   const partner = realName(p.facultyPartner);
@@ -461,7 +434,7 @@ function ppOpenHTML(p) {
   if (partner) credits.push(`<span class="ppf-seg"><i>Partner</i>${esc(partner)}</span>`);
   const chip = p.domain ? `<span class="ppf-chip">${esc(titleCase(p.domain))}</span>` : '';
   return `<span class="ppf-year">${p.year || ''}</span>` +
-    `<div class="ppf-body"><b class="ppf-name">${esc(p.name)}</b></div>` +
+    `<div class="ppf-body"><b class="ppf-name">${esc(prettyName(p.name))}</b></div>` +
     `<div class="ppf-credits">${credits.join('')}${chip}</div>`;
 }
 // A continuously-scrolling list of every past project, driven from rAF rather
@@ -566,7 +539,6 @@ function openStory() {
   const ov = $('#pp-open');
   const p = reel.chip && pastList()[Number(reel.chip.dataset.i)];
   if (!ov || !p) { resumeReel(); return; }
-  ov.style.setProperty('--accent', domainColor(p.domain));
   ov.innerHTML = ppOpenHTML(p);
   ov.hidden = false;
   ov.classList.remove('closing');
