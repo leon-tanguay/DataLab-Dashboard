@@ -42,7 +42,6 @@ const state = {
 };
 
 let featTimer = null;
-let railTimer = null;
 let boardTimer = null;
 let pastTimer = null;
 let pastCloseTimer = null;
@@ -697,12 +696,21 @@ function resumeReel() {
   reel.chip = null;
   if (!reduceMotion) reel.mode = 'cruise';
 }
+// Leave the reel in a state it can be resumed from. Stopping mid-story would
+// otherwise cancel the close timer that resets mode and clears the highlight, so
+// coming back — when a workshop is posted and later passes — would find the reel
+// still in 'hold' with a story frozen open, and the crawl would never restart.
 function stopPastCycle() {
   clearInterval(pastTimer);
   clearTimeout(pastCloseTimer);
   pastTimer = null;
   cancelAnimationFrame(reel.raf);
   reel.raf = null;
+  const ov = $('#pp-open');
+  if (ov) { ov.hidden = true; ov.classList.remove('opening', 'closing'); }
+  if (reel.chip) reel.chip.classList.remove('next');
+  reel.chip = null;
+  reel.mode = 'cruise';
 }
 function showRail(mode) {
   const changed = state.railMode !== mode;
@@ -716,19 +724,12 @@ function showRail(mode) {
   if (useWs) { stopPastCycle(); renderWorkshops(changed); }
   else startPastCycle();
 }
+// Workshops win outright when there are any. They are the one thing on the board
+// a visitor can act on — a date they could turn up to — so the rail stays on them
+// rather than trading the slot back and forth with the archive. Past projects
+// fill the rail only when nothing is scheduled.
 function renderRail() {
-  const hasWs = (state.workshops || []).length > 0;
-  // Don't restart the swap timer on every poll — that would stall the rail's
-  // rhythm and re-deal cards that are already on screen.
-  if (hasWs && railTimer) { showRail(state.railMode); return; }
-  clearInterval(railTimer);
-  railTimer = null;
-  if (hasWs) {
-    showRail(state.railMode === 'past' ? 'past' : 'workshops');
-    railTimer = setInterval(() => showRail(state.railMode === 'workshops' ? 'past' : 'workshops'), 18000);
-  } else {
-    showRail('past');
-  }
+  showRail((state.workshops || []).length ? 'workshops' : 'past');
 }
 
 /* ---------------- hours / alerts ---------------- */
